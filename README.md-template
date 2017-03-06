@@ -1,0 +1,25 @@
+# FSND P2 - Multi User Blog
+
+A Multi User Blog module
+
+## Highlights
+
+
+
+
+## Know limitations
+
+## Live URL
+
+https://udacity-160512.appspot.com/blog
+
+## Installation
+
+```
+npm install
+bower install
+```
+
+## Version
+
+{genrated}

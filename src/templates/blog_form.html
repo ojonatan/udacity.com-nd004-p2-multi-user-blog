@@ -1,0 +1,22 @@
+<form method="POST">
+
+    <h1>CS 253 Blog</h1>
+
+    <h2>new post</h2>
+
+    <div>
+        <label for="subject">Subject</label>
+    </div>
+    <input type="text" name="subject" id="subject" value="{{subject}}" />
+
+    <div>
+        <label for="content">blog</label>
+    </div>
+    <textarea name="content" id="content">{{content}}</textarea>
+
+    <div class="error">
+        {{error}}
+    </div>
+    <input type="submit" />
+
+</form>

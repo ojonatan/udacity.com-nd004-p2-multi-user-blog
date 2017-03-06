@@ -1,0 +1,21 @@
+{
+  "name": "udacity.com-nd004-p2-multi-user-blog",
+  "description": "",
+  "directory": "public/bower_components/",
+  "main": "js/main.js",
+  "authors": [
+    "Oliver Schleede <udacity.com@cityflowers.de>"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/ojonatan/udacity.com-nd004-p2-multi-user-blog.git",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "^3.3.7"
+  }
+}

@@ -1,0 +1,58 @@
+{% extends "signup_db_base.html" %}
+
+{% block content %}
+	<form  method="POST">
+		<table border="0">
+			<tr>
+				<td>
+					<label for="username">Username</label>
+				</td>
+				<td>
+					<input type="text" name="username" id="username" value="{{ username }}" />
+				</td>
+				<td>
+					<span style="color:red">{{ error_username }}</span>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<label for="password">Password</label>
+				</td>
+				<td>
+					<input type="password" name="password" id="password" />
+				</td>
+				<td>
+					<span style="color:red">{{ error_password }}</span>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<label for="verify">Verify Password</label>
+				</td>
+				<td>
+					<input type="password" name="verify" id="verify" />
+				</td>
+				<td>
+					<span style="color:red">{{ error_verify }}</span>
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<label for="email">Email (optional)</label>
+				</td>
+				<td>
+					<input type="text" name="email" id="email" value="{{ email }}" />
+				</td>
+				<td>
+					<span style="color:red">{{ error_email }}</span>
+				</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td colspan="2"><input type="submit" /></td>
+			</tr>
+		</table>
+
+		Already have an account? Log in <a href="/blog/login">here</a>
+	</form>
+{% endblock %}

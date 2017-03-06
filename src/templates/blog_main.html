@@ -1,0 +1,18 @@
+<html>
+<head>
+    <title>CS 253 Blog</title>
+</head>
+<body>
+{% for entry in entries %}
+    <div class="entry">
+        <span style="float: right">{{entry.created}}</span>
+        <h2>{{entry.subject}}</h2>
+        <div style="clear: both;">{{entry.content}}</div>
+        <a href="/blog/entry/{{entry.key().id()}}">read more</a>
+    </div>
+    <hr />
+{% endfor %}
+
+<a href="/blog/newpost">new post</a>
+</body>
+</html>
