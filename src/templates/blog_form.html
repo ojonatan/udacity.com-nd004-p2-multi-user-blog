@@ -1,6 +1,7 @@
-<form method="POST">
+{% extends "base.html" %}
 
-    <h1>CS 253 Blog</h1>
+{% block content %}
+<form method="POST">
 
     <h2>new post</h2>
 
@@ -20,3 +21,5 @@
     <input type="submit" />
 
 </form>
+
+{% endblock %}

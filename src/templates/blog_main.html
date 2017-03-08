@@ -1,18 +1,19 @@
-<html>
-<head>
-    <title>CS 253 Blog</title>
-</head>
-<body>
-{% for entry in entries %}
-    <div class="entry">
-        <span style="float: right">{{entry.created}}</span>
-        <h2>{{entry.subject}}</h2>
-        <div style="clear: both;">{{entry.content}}</div>
-        <a href="/blog/entry/{{entry.key().id()}}">read more</a>
+{% extends "base.html" %}
+
+{% block content %}
+
+{% for post in posts %}
+    <div class="post">
+        <span style="float: right">{{post.created}}</span>
+        <h2>{{post.subject}}</h2>
+        <div style="clear: both;">Author: {{post.user.username}}</div>
+        <div>{{post.content}}</div>
+
+        <a href="{{url_prefix}}post/{{post.key().id()}}">read more</a>
     </div>
     <hr />
 {% endfor %}
 
-<a href="/blog/newpost">new post</a>
-</body>
-</html>
+<a href="{{url_prefix}}newpost">new post</a>
+
+{% endblock %}

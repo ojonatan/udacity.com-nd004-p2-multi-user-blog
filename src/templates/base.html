@@ -1,15 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<style type="text/css">
-		.error {
-			color: red;
-		}
-		</style>
+		<meta charset="utf-8">
+		<meta name="description" content="Udacity Multi User blog">
+		<meta name="author" content="//o.cx">
+		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+		<meta name="mobile-web-app-capable" content="yes">
+		<meta id="theme-color" name="theme-color" content="#307699"> <!-- TODO -->
+		<link href="https://fonts.googleapis.com/css?family=Crimson+Text%7CFjalla+One" rel="stylesheet">
+		<base target="_blank">
+		<link rel="stylesheet" href="css/bootstrap.wrapper.css">
+		<link rel="stylesheet" href="css/slick.wrapper.css">
+		<link rel="stylesheet" href="css/slick-theme.wrapper.css">
+		<title>Oliver Schleede - Portfolio Site</title>
 	</head>
 	<body>
+{% if username %}
+	<span>{{username}}</span> <a href="{{url_prefix}}logout">logout</a>
+<hr>
+{% else %}
+	<a href="{{url_prefix}}login">login</a>
+{% endif %}
 
-	{% block content %}{% endblock %}
+{% block content %}{% endblock %}
 
+	<script src="/js/test.js"></script>
 	</body>
 </html>

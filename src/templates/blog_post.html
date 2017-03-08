@@ -1,17 +1,17 @@
-<html>
-<head>
-    <title>CS 253 Blog - {{entry.subject}}</title>
-</head>
-<body>
-<div class="entry">
-    <span style="float: right">{{entry.created}}</span>
-    <h2>{{entry.subject}}</h2>
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="post">
+    <span style="float: right">{{post.created}}</span>
+    <h2>{{post.subject}}</h2>
     <hr />
-    <div style="clear: both;">{{entry.content}}</div>
+    <div style="clear: both;">{{post.content}}</div>
+    <div>{{post.user.username}}</div>
 </div>
 <hr />
 
-<a href="/blog">back</a><br />
-<a href="/blog/newpost">new post</a>
-</body>
-</html>
+<a href="{{url_prefix}}">back</a><br />
+<a href="{{url_prefix}}newpost">new post</a>
+
+{% endblock %}

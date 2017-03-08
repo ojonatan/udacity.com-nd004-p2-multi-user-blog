@@ -7,13 +7,14 @@ handlers:
   script: main.app
 
 - url: /css
-  static_dir: ../public/css
+  upload: ../dist/css/*.css
+  static_files: css/\1
 
 - url: /js
-  static_dir: ../public/js
+  static_dir: ..\dist\js
 
 - url: /img
-  static_dir: ../public/img
+  static_dir: ../dist/img
 
 libraries:
 - name: jinja2
