@@ -5,6 +5,25 @@ A Multi User Blog module
 ## Highlights
 
 
+## Roadmap
+
+### 0.1
+
+* Edit functionality implemented
+* Accessing forms for protected functionality require login
+
+### 0.2
+
+Markup for blog with homework functionality completed using
+Bootstrap
+
+### 0.x
+
+* Advanced functionality
+** Configuration panel for blog related settings
+** Tags
+** Cats
+** Calendar
 
 
 ## Know limitations

@@ -17,7 +17,7 @@ module.exports = function(grunt){
 					expand: true,
 					flatten: true,
 					src: 'images_src/prepared/*.{gif,jpg,png,svg}',
-					dest: 'public/img'
+					dest: 'dist/img'
 				}]
 			},
 		},
@@ -74,13 +74,13 @@ module.exports = function(grunt){
 		/* Clear out the images directory if it exists */
 		clean: {
 			dev: {
-				src: ['public/img/*'],
+				src: ['dist/img/*'],
 			}
 		},
 		mkdir: {
 			dev: {
 				options: {
-					create: ['public/img']
+					create: ['dist/img']
 				},
 			},
 		},
@@ -89,14 +89,14 @@ module.exports = function(grunt){
 				options: {
 					sourceMap: false,
 
-					paths: ['public/css'],
+					paths: ['dist/css'],
 					plugins: [
 						new (require('less-plugin-autoprefix'))({browsers: ["last 2 versions"]}),
 						new (require('less-plugin-clean-css'))({})
 					]
 				},
 				files: {
-					'public/css/bootstrap.wrapper.css': 'src/less/bootstrap.wrapper.less'
+					'dist/css/bootstrap.wrapper.css': 'src/less/bootstrap.wrapper.less'
 				}
 			}
 		},
@@ -111,7 +111,7 @@ module.exports = function(grunt){
 					expand: true,									// Enable dynamic expansion
 					cwd: 'images_responsive/',									 // Src matches are relative to this path
 					src: ['**/*.{png,jpg,gif,jpeg}'],	 // Actual patterns to match
-					dest: 'public/img/'									// Destination path prefix
+					dest: 'dist/img/'									// Destination path prefix
 				}]
 			}
 		}
