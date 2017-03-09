@@ -9,11 +9,23 @@
         <div style="clear: both;">Author: {{post.user.username}}</div>
         <div>{{post.content}}</div>
 
-        <a href="{{url_prefix}}post/{{post.key().id()}}">read more</a>
+        <a href="{{url_prefix}}post/{{post.key().id()}}">read more</a><br>
+
+{% if post.user.username == username %}
+		<a href="{{url_prefix}}updatepost?post_id={{post.key().id()}}">update</a><br>
+{% elif user %}
+		<form action="{{url_prefix}}like/{{post.key().id()}}" method="post">
+	{% if user.liked_posts.filter('post = ',post.key()).count() == 1 %}
+			<button type="submit">Unlike!</button>
+	{% else %}
+			<button type="submit">Like!</button>
+	{% endif %}
+		</form>
+{% endif %}
     </div>
     <hr />
 {% endfor %}
 
-<a href="{{url_prefix}}newpost">new post</a>
+<a href="{{url_prefix}}newpost">new post!</a>
 
 {% endblock %}

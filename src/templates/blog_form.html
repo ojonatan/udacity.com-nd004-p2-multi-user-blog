@@ -3,17 +3,24 @@
 {% block content %}
 <form method="POST">
 
+{% if not update %}
     <h2>new post</h2>
-
+{% else %}
+    <h2>update post</h2>
+    <input type="hidden" name="post_id" value="{{post_id}}" />
+{% endif %}
     <div>
         <label for="subject">Subject</label>
     </div>
     <input type="text" name="subject" id="subject" value="{{subject}}" />
+    <span style="color:red">{{ error_subject }}</span>
+
 
     <div>
         <label for="content">blog</label>
     </div>
     <textarea name="content" id="content">{{content}}</textarea>
+    <span style="color:red">{{ error_content }}</span>
 
     <div class="error">
         {{error}}
@@ -21,5 +28,11 @@
     <input type="submit" />
 
 </form>
+
+{% if not update %}
+    <a href="{{url_prefix}}">Cancel</a> and return to blog<br>
+{% else %}
+    <a href="{{url_prefix}}post/{{post_id}}">Cancel</a> and return to post<br>
+{% endif %}
 
 {% endblock %}

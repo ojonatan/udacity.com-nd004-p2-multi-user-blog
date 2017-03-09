@@ -8,22 +8,21 @@
 		<meta name="mobile-web-app-capable" content="yes">
 		<meta id="theme-color" name="theme-color" content="#307699"> <!-- TODO -->
 		<link href="https://fonts.googleapis.com/css?family=Crimson+Text%7CFjalla+One" rel="stylesheet">
-		<base target="_blank">
-		<link rel="stylesheet" href="css/bootstrap.wrapper.css">
-		<link rel="stylesheet" href="css/slick.wrapper.css">
-		<link rel="stylesheet" href="css/slick-theme.wrapper.css">
-		<title>Oliver Schleede - Portfolio Site</title>
+		<link rel="stylesheet" href="/css/bootstrap.wrapper.css">
+		<title>Oliver Schleede - Multi User Blog</title>
 	</head>
 	<body>
+{% if not login_page %}
+
 {% if username %}
-	<span>{{username}}</span> <a href="{{url_prefix}}logout">logout</a>
-<hr>
+		<span>{{username}}</span> <a href="{{url_prefix}}logout">logout</a>
+		<hr>
 {% else %}
-	<a href="{{url_prefix}}login">login</a>
+		<a href="{{url_prefix}}login">login</a>
+{% endif %}
+
 {% endif %}
 
 {% block content %}{% endblock %}
-
-	<script src="/js/test.js"></script>
 	</body>
 </html>

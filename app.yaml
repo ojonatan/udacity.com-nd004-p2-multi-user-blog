@@ -3,18 +3,17 @@ api_version: 1
 threadsafe: true
 
 handlers:
-- url: /.*
-  script: main.app
-
 - url: /css
-  upload: ../dist/css/*.css
-  static_files: css/\1
+  static_dir: dist/css
 
 - url: /js
-  static_dir: ..\dist\js
+  static_dir: dist/js
 
 - url: /img
-  static_dir: ../dist/img
+  static_dir: dist/img
+
+- url: /.*
+  script: main.app
 
 libraries:
 - name: jinja2

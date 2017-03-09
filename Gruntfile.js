@@ -8,17 +8,35 @@ module.exports = function(grunt){
 				files:[
 					'src/less/**'
 				],
-				tasks:['less']
+				tasks:[
+					'less'
+				]
+			},
+			copy: {
+				files: [
+					'src/templates/**'
+				],
+				tasks: [
+					'copy'
+				]
 			}
 		},
 		copy: {
 			dev: {
-				files: [{
-					expand: true,
-					flatten: true,
-					src: 'images_src/prepared/*.{gif,jpg,png,svg}',
-					dest: 'dist/img'
-				}]
+				files: [
+					{
+						expand: true,
+						flatten: true,
+						src: 'images_src/prepared/*.{gif,jpg,png,svg}',
+						dest: 'dist/img'
+					},
+					{
+						expand: true,
+						flatten: true,
+						src: 'src/templates/*.html',
+						dest: 'dist/templates'
+					}
+				]
 			},
 		},
 		responsive_images: {
