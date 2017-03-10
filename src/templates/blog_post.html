@@ -8,20 +8,63 @@
     <hr />
     <div style="clear: both;">{{post.content}}</div>
     <div>{{post.user.username}}</div>
+	<hr>
+	{% if post.comments.count() %}
+		{% for comment in post.comments %}
+			<small>{{comment.user.username}} {{comment.created}}</small>
+			<h4>{{comment.subject}}</h4>
+			<p>{{comment.comment}}</p>
+			{% if comment.user.key() == user.key() %}
+			<a href="{{url_prefix}}post/{{post.key().id()}}/comment/{{comment.key().id()}}/edit">edit</a>
+			<a href="{{url_prefix}}post/{{post.key().id()}}/comment/{{comment.key().id()}}/delete">delete</a>
+			{% endif %}
+
+		{% endfor %}
+	{% endif %}
+
 </div>
 <hr />
 
-{% if post.user.username == username %}
-<a href="{{url_prefix}}updatepost?post_id={{post.key().id()}}">update</a><br />
-{% else %}
-<form action="{{url_prefix}}like/{{post.key().id()}}" method="post">
-	{% if user.liked_posts.filter('post = ',post.key()).count() == 1 %}
-<button type="submit">Unlike!</button>
-	{% else %}
-<button type="submit">Like!</button>
+	{% if user %}
+
+		{% if not update %}
+	<form action="{{url_prefix}}post/{{post.key().id()}}/comment" method="post">
+		<h3>new comment</h3>
+		{% else %}
+	<form action="{{url_prefix}}post/{{post.key().id()}}/comment/{{comment.key().id()}}/edit" method="post">
+		<h3>update comment</h3>
+		<input type="hidden" name="comment_id" value="{{comment_id}}" />
+		{% endif %}
+		<div>
+			<label for="subject">Subject</label>
+		</div>
+		<input type="text" name="subject" id="subject" value="{{comment.subject}}" />
+		<span style="color:red">{{ error_subject }}</span>
+
+
+		<div>
+			<label for="content">Your comment</label>
+		</div>
+		<textarea name="content" id="content">{{comment.content}}</textarea>
+		<span style="color:red">{{ error_content }}</span>
+
+		<div class="error">{{error}}</div>
+		<input type="submit" />
+
+	</form>
 	{% endif %}
+
+	{% if post.user.key() == user.key() %}
+<a href="{{url_prefix}}updatepost?post_id={{post.key().id()}}">update</a><br />
+	{% else %}
+<form action="{{url_prefix}}like/{{post.key().id()}}" method="post">
+		{% if user.liked_posts.filter('post = ',post.key()).count() == 1 %}
+<button type="submit">Unlike!</button>
+		{% else %}
+<button type="submit">Like!</button>
+		{% endif %}
 </form>
-{% endif %}
+	{% endif %}
 
 <a href="{{url_prefix}}">back</a><br />
 <a href="{{url_prefix}}newpost">new post</a>

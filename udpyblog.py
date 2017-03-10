@@ -31,6 +31,14 @@ class UdPyBlogPost(db.Model):
     categories = db.ListProperty(db.Key)
     user = db.ReferenceProperty(UdPyBlogUser, collection_name='posts')
 
+class UdPyBlogPostComment(db.Model):
+    subject = db.StringProperty(required = True)
+    content = db.TextProperty(required = True)
+    created = db.DateTimeProperty(auto_now_add = True)
+    categories = db.ListProperty(db.Key)
+    user = db.ReferenceProperty(UdPyBlogUser, collection_name='comments')
+    post = db.ReferenceProperty(UdPyBlogPost, collection_name='comments')
+
 class UdPyBlogCategory(db.Model):
     category = db.StringProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
@@ -49,6 +57,7 @@ class UdPyBlogPostLikes(db.Model):
         required=True,
         collection_name='liked_posts'
     )
+
 
 class UdPyBlogHandler(webapp2.RequestHandler):
     login = False
@@ -81,13 +90,13 @@ class UdPyBlogHandler(webapp2.RequestHandler):
     def redirect_prefixed(self, fragment, code=None):
         self.redirect(UdPyBlog.blog_prefix + fragment, code=code)    
     
-    def render_str(self, template, **params):
+    def render_str(self, template_file, **params):
         params["login_page"] = self.login
         params["url_prefix"] = UdPyBlog.blog_prefix
         if self.user:
             params["username"] = self.user.username
         
-        return UdPyBlog.render_template(template, **params)
+        return UdPyBlog.render_template(template_file, **params)
 
     def render(self, template, **kw):
         self.write(self.render_str(template, **kw))
@@ -131,9 +140,8 @@ class UdPyBlogHandler(webapp2.RequestHandler):
 
 class UdPyBlogPostViewHandler(UdPyBlogHandler):
     url = "post"
-    def get(self,post_id):
+    def get(self, post_id):
         self.auth()
-        
         if post_id.isdigit():
             try:
                 post = UdPyBlogPost.get_by_id(int(post_id))
@@ -142,9 +150,11 @@ class UdPyBlogPostViewHandler(UdPyBlogHandler):
                     logging.info("current user likes this post")
                     likes_post = True
                     
-                self.render("blog_post.html", **{ "post": post, "user": self.user } )
+                self.render("blog_post.html", **{ "post": post, "user": self.user, "comment": None } )
+                return
             except:
                 self.render("blog_main.html",error = "ID not found (" + str(post_id) + ")")
+                return
         else:
             self.redirect_prefixed('')
 
@@ -304,7 +314,7 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
 
             else:
                 self.errors += 1
-                return (input_subject,"Post subject not valid or too short")
+                return (input_subject,"Subject not valid or too short")
 
         if input == "content":
             input_content = self.request.get(input)
@@ -313,7 +323,7 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
 
             else:
                 self.errors += 1
-                return ("","Post content not valid or too short")
+                return ("","Content not valid or too short")
 
         if input == "post_id":
             input_post_id = self.request.get(input)
@@ -375,9 +385,7 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
 
     def get(self):
         self.auth()
-        logging.info(self.args)
         self.render("blog_form.html", **self.args)
-
 
 class UdPyBlogPostUpdateHandler(UdPyBlogPostHandler):
     update=True
@@ -385,12 +393,9 @@ class UdPyBlogPostUpdateHandler(UdPyBlogPostHandler):
         self.auth()
         post_id = self.request.get("post_id")
         if post_id.isdigit():
-            logging.info(post_id)
             try:
                 post = UdPyBlogPost.get_by_id(int(post_id))
-                logging.info(post.subject)
                 if post:
-                    logging.info(self.args)
                     self.render(
                         "blog_form.html",
                         **{
@@ -408,6 +413,162 @@ class UdPyBlogPostUpdateHandler(UdPyBlogPostHandler):
             self.redirect_prefixed('')
 
 
+class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
+    """Handling comments posted on a post"""
+    
+    restricted = True
+    def post(self, post_id):
+        self.auth()
+        if self.update:
+            self.fields.append('comment_id')
+
+        post = UdPyBlogPost.get_by_id(int(post_id))
+        if not post:
+            self.redirect_prefixed('')
+            
+        for field in self.fields:
+            self.args[field],self.args['error_' + field] = '',''
+            self.args[field],self.args['error_' + field] = self.validate(field)
+
+        if self.errors > 0:
+            self.args["post"] = post
+            self.args["user"] = self.user
+            self.args["comment"] = None
+            self.render("blog_post.html", **self.args )
+            return
+
+        else:
+            if not self.update:
+                comment = UdPyBlogPostComment(
+                    subject = self.request.get('subject'),
+                    content = self.request.get('content'),
+                    post = post,
+                    user = self.user
+                )
+            else:
+                comment = UdPyBlogPostComment.get_by_id(int(self.args["comment_id"]))
+                if not post or post.user.username != self.user.username:
+                    self.redirect_prefixed("post/{0}".format(self.args["post_id"]))
+                    return
+
+                comment.content = self.args["content"]
+                comment.subject = self.args["subject"]
+
+            comment.put()
+            self.redirect_prefixed("post/{0}".format(post.key().id()))
+            return
+
+        self.render(
+            "blog_post.html",**{
+                "error": error,
+                "comment": None,
+                "post": post,
+                "subject": self.request.get("subject"),
+                "content": self.request.get("content")
+            }
+        )
+
+class UdPyBlogPostCommentDeleteHandler(UdPyBlogPostCommentHandler):
+    """Handling comment deletions on a post"""
+    
+    restricted = True
+    def get(self, post_id, comment_id):
+        self.auth()
+        comment = UdPyBlogPostComment.get_by_id(int(comment_id))
+        if not comment or comment.user.key() != self.user.key():
+            self.redirect_prefixed("")
+            return
+
+        comment.delete()
+        self.redirect_prefixed("post/{0}".format(post_id))
+        return
+
+class UdPyBlogPostCommentEditHandler(UdPyBlogPostCommentHandler):
+    """Handling comment edits on a post"""
+    
+    update = True
+    restricted = True
+    def get(self, post_id, comment_id):
+        self.auth()
+        comment = UdPyBlogPostComment.get_by_id(int(comment_id))
+        if not comment_id or comment.user.key() != self.user.key():
+            self.redirect_prefixed("")
+            return
+        
+        post_id = comment.post.key().id()
+        logging.info(comment.post.user.username)
+        logging.info(comment.post)
+        if not comment.post or comment.user.username != self.user.username:
+            self.redirect_prefixed("post/{0}".format(post_id))
+            return
+            
+        self.render(
+            "blog_post.html",
+            **{
+                "post": comment.post,
+                "user": self.user,
+                "comment": comment,
+                "update": self.update
+            }
+        )
+
+    def post(self, post_id, comment_id):
+        self.auth()
+        post = UdPyBlogPost.get_by_id(int(post_id))
+        if not post:
+            self.redirect_prefixed('')
+            
+        for field in self.fields:
+            self.args[field],self.args['error_' + field] = '',''
+            self.args[field],self.args['error_' + field] = self.validate(field)
+
+        if self.errors > 0:
+            logging.info("Errors gt 0")
+            self.render(
+                "blog_post.html",
+                **{
+                    "comment": None,
+                    "user": self.user,
+                    "post": post,
+                    "subject": self.args["subject"],
+                    "comment": self.args["comment"],
+                    "update": self.update
+                }
+            )
+            return
+
+        else:
+            logging.info("All koo")
+            if not self.update:
+                comment = UdPyBlogPostComment(
+                    subject = self.request.get('subject'),
+                    content = self.request.get('content'),
+                    post = post,
+                    user = self.user
+                )
+            else:
+                comment = UdPyBlogPostComment.get_by_id(int(comment_id))
+                if not comment or comment.user.username != self.user.username:
+                    self.redirect_prefixed("post/{0}".format(post_id))
+                    return
+
+                comment.content = self.args["content"]
+                comment.subject = self.args["subject"]
+
+            comment.put()
+            self.redirect_prefixed("post/{0}".format(post.key().id()))
+            return
+
+        self.render(
+            "blog_post.html",**{
+                "error": error,
+                "comment": None,
+                "subject": self.request.get("subject"),
+                "content": self.request.get("content"),
+                "created": self.request.get("created")
+            }
+        )
+   
 class UdPyBlogInitHandler(UdPyBlogSignupHandler):
     fields = [ "password" ]
     def get(self):
@@ -426,8 +587,6 @@ class UdPyBlogInitHandler(UdPyBlogSignupHandler):
 
         else:
             if self.args["password"] == udpyblog_init_pass:
-
-
                 udpyblog_init_blog()
                 return
             else:
@@ -501,6 +660,9 @@ class UdPyBlog():
         ('welcome', UdPyBlogSignupSuccessHandler),
         ('updatepost', UdPyBlogPostUpdateHandler),
         ('post/([0-9]+)', UdPyBlogPostViewHandler),
+        ('post/([0-9]+)/comment', UdPyBlogPostCommentHandler),
+        ('post/([0-9]+)/comment/([0-9]+)/edit', UdPyBlogPostCommentEditHandler),
+        ('post/([0-9]+)/comment/([0-9]+)/delete', UdPyBlogPostCommentDeleteHandler),
         ('init', UdPyBlogInitHandler),
         ('newpost', UdPyBlogPostHandler),
         ('like/([0-9]+)', UdPyBlogPostLikeHandler)
@@ -513,7 +675,6 @@ class UdPyBlog():
     
     @classmethod
     def prepare(cls, config = None):
-        logging.info(cls)
         if config:
             if "template_folder" in config:
                 cls.template_folder = config["template_folder"]
@@ -542,8 +703,8 @@ class UdPyBlog():
         response.out.write(cls.render_template("error.html", exception=exception, response=response))
 
     @classmethod
-    def render_template(cls, template, **params):
-        template = cls.jinja_env.get_template(template)
+    def render_template(cls, template_file, **params):
+        template = cls.jinja_env.get_template(template_file)
         return template.render(params)
 
     @classmethod
