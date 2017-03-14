@@ -14,14 +14,14 @@
         <div style="clear: both;">Author: {{post.user.username}}</div>
         <div>{{post.summary}}</div>
 
-        <a href="{{url_prefix}}post/{{post.key().id()}}">read more</a><br>
+        <a href="{{url_prefix}}post/{{post.key().id()}}" data-blog-control="get-post-view">read more</a><br>
 
 		{% if user and user.username != post.user.username %}
-		<form action="{{url_prefix}}like/{{post.key().id()}}" method="post">
+		<form action="{{url_prefix}}post/{{post.key().id()}}/like" method="post" data-blog-form="post-post-like">
 			{% if user.liked_posts.filter('post = ',post.key()).count() == 1 %}
-			<button type="submit">Unlike!</button>
+			<button type="submit" data-blog-control="post-unlike">Unlike!</button>
 			{% else %}
-			<button type="submit">Like!</button>
+			<button type="submit" data-blog-control="post-like">Like!</button>
 			{% endif %}
 		</form>
 		{% endif %}
@@ -30,7 +30,7 @@
 	{% endfor %}
 
 	{% if user %}
-<a href="{{url_prefix}}newpost">new post!!</a>
+<a href="{{url_prefix}}newpost" data-blog-control="get-post-create">new post!!</a>
 	{% endif %}
 
 {% endblock %}

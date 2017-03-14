@@ -19,10 +19,14 @@
 {% if not login_page %}
 
 {% if user %}
-		<span class="user-status user-logged-in">{{user.username}}</span> <a href="{{url_prefix}}logout">logout</a>
+		<span class="user-status user-logged-in">{{user.username}}</span> <a href="{{url_prefix}}logout" data-blog-control="get-logout">logout</a>
 		<hr>
 {% else %}
-		<a href="{{ url_prefix }}login"><span class="user-status user-logged-out">log in!</span></a> or <a href="{{ url_prefix }}signup">sign up</a>
+		<a href="{{ url_prefix }}login" data-blog-control="get-login"><span class="user-status user-logged-out">log in!</span></a>
+	{% if not signup_page %}
+		or <a href="{{ url_prefix }}signup" data-blog-control="get-signup">sign up!</a>
+	{% endif %}
+
 {% endif %}
 
 {% endif %}

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<form  method="post">
+<form  method="post" data-blog-form="post-login">
 	<table border="0">
 		<tr>
 			<td>
@@ -28,9 +28,9 @@
 	</table>
 
 	<div class="error">{{ error }}</div>
-	<input type="submit" />
+	<input type="submit"  data-blog-control="post-login" />
 
-	No Account yet? <a href="signup">Sign up right away!</a>
+	No Account yet? <a href="signup" data-blog-control="get-signup">Sign up right away!</a>
 
 </form>
 {% endblock %}

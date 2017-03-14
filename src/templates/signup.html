@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-	<form id="form-signup" method="post">
+	<form id="form-signup" method="post" data-blog-form="post-signup">
 		<table border="0">
 			<tr>
 				<td>
@@ -49,10 +49,10 @@
 			</tr>
 			<tr>
 				<td>&nbsp;</td>
-				<td colspan="2"><input type="submit" /></td>
+				<td colspan="2"><input type="submit" data-blog-control="post-signup" /></td>
 			</tr>
 		</table>
 
-		Already have an account? Log in <a href="login">here</a>
+		Already have an account? Log in <a href="login"  data-blog-control="get-login">here</a>
 	</form>
 {% endblock %}

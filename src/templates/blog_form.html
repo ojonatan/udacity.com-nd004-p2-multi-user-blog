@@ -2,12 +2,15 @@
 
 {% block content %}
 
-		<form id="post-form" data-toggle="validator" role="forms" method="post" data-ready="1">
+	{% if not update %}
+		<form id="post-form" data-toggle="validator" role="forms" method="post" data-ready="1" data-blog-form="post-post-create">
 			<div class="form-inline row">
 				<div class="form-group col-xs-12">
-	{% if not update %}
 					<h2>new post</h2>
 	{% else %}
+		<form id="post-form" data-toggle="validator" role="forms" method="post" data-ready="1" data-blog-form="post-post-update">
+			<div class="form-inline row">
+				<div class="form-group col-xs-12">
 					<h2>update post</h2>
 					<input type="hidden" name="post_id" value="{{post_id}}" />
 	{% endif %}
@@ -24,7 +27,7 @@ BLOB
 				<div class="form-group col-xs-12">
 					<label for="post-subject">Subject*</label><br />
 					<input name="subject" type="text" class="form-control" id="post-subject" data-error="Please enter a subject." placeholder="" value="{{subject}}" required="required">
-					<div class="help-block with-errors">{{ error_subject }}</div>
+					<div class="help-block with-errors error-subject">{{ error_subject }}</div>
 				</div>
 			</div>
 			<div class="form-inline row">
@@ -36,35 +39,35 @@ BLOB
 	{% else %}
 					<input type="hidden" id="post-cover-url" name="cover_image_url" value="">
 	{% endif %}
-					<div class="help-block with-errors">{{ error_cover_image }}</div>
+					<div class="help-block with-errors error-cover">{{ error_cover_image }}</div>
 				</div>
 				<div class="form-group col-xs-6">
 					<label for="kontakt-nachricht">Summary*</label>
 					<textarea name="summary" class="form-control form-control-textarea" id="post-summary" rows="3" data-error="Please insert a post summary." data-maxlength="2000" required="required">{{summary}}</textarea>
 					<small class="form-text text-muted">max. 500 characters</small>
-					<div class="help-block with-errors">{{ error_summary }}</div>
+					<div class="help-block with-errors error-summary">{{ error_summary }}</div>
 				</div>
 			</div>
 
 			<div class="form-group">
 				<label for="subject">Post*</label>
-				<div class="help-block with-errors">{{ error_content }}</div>
+				<div class="help-block with-errors error-content">{{ error_content }}</div>
 				<textarea name="content" id="content" class="form-control-upload" data-blog-upload-url-source="{{upload_url_source}}" data-blog-upload-url="">{{content}}</textarea>
 
 			</div>
 
 			<div class="form-inline row">
 				<div class="form-group col-xs-12">
-					<input type="submit" />
+					<input type="submit" data-blog-control="post-post-create"/>
 				</div>
 			</div>
 
 		</form>
 
 {% if not update %}
-    <a href="{{url_prefix}}">Cancel</a> and return to blog<br>
+    <a href="{{url_prefix}}" data-blog-control="get-home">Cancel</a> and return to blog<br>
 {% else %}
-    <a href="{{url_prefix}}post/{{post_id}}">Cancel</a> and return to post<br>
+    <a href="{{url_prefix}}post/{{post_id}}" data-blog-control="get-post-view">Cancel</a> and return to post<br>
 {% endif %}
 
 <script src="/bower_components/jquery/dist/jquery.min.js"></script>

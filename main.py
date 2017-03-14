@@ -19,7 +19,7 @@ config['udpyblog'] = {
     "blog_prefix": "/",
     "template_folder": "dist/templates",
     "init_pass": "reset all data!",
-    "forbidden_tags": [ ('h1','h3'), ('h2','h4'), ('script','p') ],
+    "forbidden_tags": [ ('h1','h3'), ('h2','h4'), ('script','p'), ('a','span') ],
     "image_view_url_part": "image/view/",
     "input_requirements": {
         "password": {

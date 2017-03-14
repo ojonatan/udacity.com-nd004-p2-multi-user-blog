@@ -14,21 +14,32 @@ import re
 import os
 import logging
 import json
+import copy
 
-# Models
-app = TestApp(app,cookiejar=CookieJar())
-app.reset()
-logging.info(app.cookies)
 # Helper functions
 def make_string(length):
     return "".join( random.choice(string.letters + string.digits) for x in xrange(length) )
 
-def merge_copy(d1, d2):
+def merge_copy_dict(d1, d2):
+    result = copy.deepcopy(d1)
+    merge_dict(result, d2)
+    return result
+
+def merge_dict(d1, d2):
     for k in d2:
         if k in d1 and isinstance(d1[k], dict) and isinstance(d2[k], dict):
-            merge_copy(d1[k], d2[k])
+            merge_dict(d1[k], d2[k])
         else:
             d1[k] = d2[k]
+def deunicodify_hook(pairs):
+    new_pairs = []
+    for key, value in pairs:
+        if isinstance(value, unicode):
+            value = value.encode('utf-8')
+        if isinstance(key, unicode):
+            key = key.encode('utf-8')
+        new_pairs.append((key, value))
+    return dict(new_pairs)
 
 class ExpectingTestCase(unittest.TestCase):
     tests_run = 0
@@ -43,44 +54,45 @@ class ExpectingTestCase(unittest.TestCase):
         except failure.__class__:
             self._result.addFailure(self, sys.exc_info())
 
-    def expect_True(self, a, msg):
-        self.tests_run += 1
-        if not a:
-            self._fail(self.failureException(msg))
-            return False
-        self._num_expectations += 1
-        return True
-
-    def expect_equal(self, a, b, msg=''):
-        self.tests_run += 1
-        self._num_expectations += 1
-        if a != b:
-            msg = '({}) Expected {} to equal {}. '.format(self._num_expectations, a, b) + msg
-            self._fail(self.failureException(msg))
-            return False
-        return True
-
     def expect_in(self, needle, haystack, msg=''):
         self.tests_run += 1
-        logging.info("test in")
         self._num_expectations += 1
         if haystack.find(needle) == -1:
             self.dump(re.sub(r'[^a-zA-Z0-9,]','_',msg),"String: {}\n-----------\nHTML:\n".format(needle,haystack))
             msg = '({}) Test: {} expected to contain {}. '.format(self._num_expectations, msg, needle)
             self._fail(self.failureException(msg))
-            logging.info("NOT FOUND!!! BAAD")
+            return False
+        return True
+
+    def expect_not_in(self, needle, haystack, msg=''):
+        self.tests_run += 1
+        self._num_expectations += 1
+        if haystack.find(needle) != -1:
+            self.dump(re.sub(r'[^a-zA-Z0-9,]','_',msg),"String: {}\n-----------\nHTML:\n".format(needle,haystack))
+            msg = '({}) Test: {} expected to contain {}. '.format(self._num_expectations, msg, needle)
+            self._fail(self.failureException(msg))
             return False
         return True
 
     def expect_re(self, regexp, haystack, msg=''):
         self.tests_run += 1
-        logging.info("test re")
-        if not re.search(regexp, haystack):
+        self._num_expectations += 1
+        if not re.search(regexp, haystack, re.MULTILINE|re.DOTALL):
+            logging.info("NOT FOUND: {}".format(regexp))
             self.dump(re.sub(r'[^a-zA-Z0-9,]','_',msg),"Regexp: {}\n-----------\nHTML:\n".format(regexp,haystack))
             msg = '({}) Test: {} expected to contain {}. '.format(self._num_expectations, msg, regexp)
             self._fail(self.failureException(msg))
             return False
+        return True
+
+    def expect_not_re(self, regexp, haystack, msg=''):
+        self.tests_run += 1
         self._num_expectations += 1
+        if re.search(regexp, haystack, re.MULTILINE|re.DOTALL):
+            self.dump(re.sub(r'[^a-zA-Z0-9,]','_',msg),"Regexp: {}\n-----------\nHTML:\n".format(regexp,haystack))
+            msg = '({}) Test: {} expected to contain {}. '.format(self._num_expectations, msg, regexp)
+            self._fail(self.failureException(msg))
+            return False
         return True
 
     def dump(self, filename, content):
@@ -95,7 +107,7 @@ class ExpectingTestCase(unittest.TestCase):
         dump_file.write(content)
         dump_file.close()
 
-class TestUserService(ExpectingTestCase):
+class TestUdPyBlog(ExpectingTestCase):
     """
     Testing the UdPyBlog module. Multiple tests can be configured
     stored in the self.tests dictionary to test multiple scenarios
@@ -117,6 +129,7 @@ class TestUserService(ExpectingTestCase):
 
     """
 
+    blog_entity_context = {}
     nosegae_datastore_v3 = True
     nosegae_datastore_v3_kwargs = {
         'datastore_file': os.path.join(
@@ -150,13 +163,13 @@ class TestUserService(ExpectingTestCase):
                     ]
                 },
                 'assertions': {
-                    're': [
-                        r'class="user-status user-logged-in"'
+                    'in': [
+                        ' data-blog-control="get-home"',
+                        ' data-blog-control="get-post-create"'
                     ]
                 }
             }
         ],
-
         # Scenarios with successful logins
         'post-login-out-success': [
             {
@@ -189,7 +202,8 @@ class TestUserService(ExpectingTestCase):
                 'url': ('get','/'),
                 'assertions': {
                     'in': [
-                        'class="user-status user-logged-out"'
+                        ' data-blog-control="get-login"',
+                        ' data-blog-control="get-signup"'
                     ]
                 }
             }
@@ -201,14 +215,162 @@ class TestUserService(ExpectingTestCase):
                 'url': ('get','/logout'),
                 'reset': False, # reset cookies before execution
                 'assertions': {
+                    'in': [
+                        ' data-blog-control="get-login"',
+                        ' data-blog-control="get-signup"'
+                    ]
+                }
+            }
+        ],
+        # Scenarios testing the new post form
+        'get-post-create-in-success': [
+            {
+                'subject': 'Post create form is accessible and is fully featured',
+                'url': ('get','/newpost'),
+                'reset': False, # reset cookies before execution
+                'assertions': {
+                    'in': [
+                        ' data-blog-control="get-logout"',
+                        ' data-blog-form="post-post-create"'
+                    ],
                     're': [
-                        r'class="user-status user-logged-out"'
+                        r'class="((?!\berror-subject\b).)+\berror-subject\b[^>]*>\s*<',
+                        r'class="((?!\berror-summary\b).)+\berror-summary\b[^>]*>\s*<',
+                        r'class="((?!\berror-cover\b).)+\berror-cover\b[^>]*>\s*<',
+                        r'class="((?!\berror-content\b).)+\berror-content\b[^>]*>\s*<'
+                    ]
+                }
+            }
+        ],
+        'get-post-view-in-success': [
+            {
+                'subject': 'Viewing posts signed in working',
+                'id': 'post-view',
+                'url': ('get','/post/'),
+                'reset': False, # reset cookies before execution
+                'assertions': {
+                    'in': [
+                        ' data-blog-control="get-logout"',
+                        ' data-blog-control="get-post-create"'
+                    ]
+                }
+            }
+        ],
+
+
+
+        # Testing bad input in the post creation form
+        'post-post-create-in-failure': [
+            {
+                'subject': 'Blog post fails: too short input for subject, summary and content',
+                'url': ('post','/newpost'),
+                'reset': False,
+                'data': {
+                    'subject': make_string(1),
+                    'summary': make_string(1),
+                    'content': make_string(1),
+                    'submit': [
+                        'subject',
+                        'summary',
+                        'content'
+                    ]
+                },
+                'assertions': {
+                    'in': [
+                        ' data-blog-form="post-post-create"',
+                        ' data-blog-control="post-post-create"',
+                        ' data-blog-control="get-home"'
+                    ],
+                    're': [
+                        r'class="((?!\berror-subject\b).)+\berror-subject\b[^>]*>.+<',
+                        r'class="((?!\berror-summary\b).)+\berror-summary\b[^>]*>.+<',
+                        r'class="((?!\berror-content\b).)+\berror-content\b[^>]*>.+<'
+                    ]
+                }
+            }
+        ],
+        # Paste a perfectly ok blog post, but add nasty things to it to validate escaping
+        'post-post-create-in-success': [
+            {
+                'subject': 'Blog post creation: Paste a perfectly ok blog post, but add nasty things to it to validate escaping',
+                'id': 'newpost',
+                'url': ('post','/newpost'),
+                'reset': False,
+                'data': {
+                    'subject': make_string(30),
+                    'summary': make_string(60),
+                    'content': '<script>alert("das darf nicht wahr sein!!!");</script><h1>Aufschneider</h1><a href="javascript:alert(\'Konkurrenz\')"></a>',
+                    'submit': [
+                        'subject',
+                        'summary',
+                        'content'
+                    ]
+                },
+                'assertions': {
+                    'in': [
+                        ' data-blog-control="get-logout"',
+                        ' data-blog-control="get-post-create"',
+                        ' data-blog-control="get-home"'
+                    ],
+                    're': [
+                        r'(?<=<!--post-start-->)((?!<h[12]|</[12]).)+(?=<!--post-end-->)',
+                        r'(?<=<!--post-start-->)((?!<script\s|</script).)+(?=<!--post-end-->)',
+                        r'(?<=<!--post-start-->)((?!<a\s|</a).)+(?=<!--post-end-->)',
+                    ]
+                }
+            }
+        ],
+        # Add a 'like' to a post
+        'post-post-like-in-success': [
+            {
+                'subject': 'Liking a blog post from another owner',
+                'id': 'like',
+                'url': ('post','/post'),
+                'reset': False,
+                'data': {},
+                'assertions': {
+                    'in': [
+                        ' data-blog-control="post-unlike"'
+                    ]
+                }
+            },
+            {
+                'subject': 'UnLiking a blog post from another owner',
+                'id': 'unlike',
+                'url': ('post','/post'),
+                'reset': False,
+                'data': {},
+                'assertions': {
+                    'in': [
+                        ' data-blog-control="post-like"'
                     ]
                 }
             }
         ],
         # Scenarios testing the fitness othe signup page
         'get-signup-out-success': [
+            {
+                'subject': "Signup page has form, submit button and a login button",
+                'reset': True,
+                'url': ('get','/signup'),
+                'assertions': {
+                    'in': [
+                        ' data-blog-control="post-signup"',
+                        ' data-blog-form="post-signup"',
+                        ' data-blog-control="get-login"',
+                    ]
+                }
+            },
+            {
+                'subject': "Signup page has no signup link",
+                'reset': True,
+                'url': ('get','/signup'),
+                'assertions': {
+                    'not_in': [
+                        ' data-blog-control="get-signup"'
+                    ]
+                }
+            },
             {
                 'subject': "Plain form has no error messages",
                 'reset': True,
@@ -382,6 +544,7 @@ class TestUserService(ExpectingTestCase):
     }
 
     def setUp(self):
+        self.app = TestApp(app,cookiejar=CookieJar())
         self.testbed = testbed.Testbed()
         self.testbed.activate()
         self.testbed.setup_env(app_id='dev~None') #udacity-160512
@@ -395,8 +558,6 @@ class TestUserService(ExpectingTestCase):
         self.testbed.init_memcache_stub()
         self.prefix = 'tests-' + str(time.time()) + '-'
         self.test_user = make_string(6)
-        self.cookies = {}
-
         for test_func in self.tests:
             for test_case in self.tests[test_func]:
                 if "data" in test_case:
@@ -414,7 +575,7 @@ class TestUserService(ExpectingTestCase):
             # completed. If the testbed is not deactivated, the original
             # stubs will not be restored.
             self.testbed.deactivate()
-            app.cookies.clear()
+            self.app.cookies.clear()
 
     # we should seperate between logged in and logged out tests
     # 00 should be a successful signup.
@@ -500,7 +661,7 @@ class TestUserService(ExpectingTestCase):
         )
 
     def test_100_login_works(self):
-        """Log out works"""
+        """Log in with existing user works"""
         self.assertTrue(
             self._run_tests(
                 [
@@ -509,29 +670,121 @@ class TestUserService(ExpectingTestCase):
             )
         )
 
-    def Xtest_101_logout_after_login_works(self):
-        """Log out works"""
-        self.assertTrue(
-            self._run_tests("test_100_login_works")
-            and
-            self._run_tests("test_101_logout_after_signup_works")
-        )
-
-    def Xtest_101_logout_after_signup_works(self):
-        """Log out works"""
+    def test_101_logout_after_login_works(self):
+        """Log out right after login works"""
         self.assertTrue(
             self._run_tests(
-                "test_000_signup_signup_post_works",
-                {
-                    "signup": {
-                        "data": {
-                            "username": make_string(5)
+                [
+                    {"post-login-out-success": {}}, # overrides not nescessary. default settings ok!
+                    {"get-logout-in-success": {}}
+                ]
+            )
+        )
+
+    def test_101_logout_after_signup_works(self):
+        """Log out right after signup works"""
+
+        self.assertTrue(
+            self._run_tests(
+                [
+                    {
+                        "post-signup-out-success": {
+                            "signup": {
+                                "data": {
+                                    "username": make_string(5)
+                                }
+                            }
+                        }
+                    }, # overrides not nescessary. default settings ok!
+                    {"get-logout-in-success": {}}
+                ]
+            )
+        )
+
+    def test_102_create_blog_post_form_works(self):
+        """The create blog post form is there and ready for input"""
+
+        self.assertTrue(
+            self._run_tests(
+                [
+                    {"post-login-out-success": {}}, # overrides not nescessary. default settings ok!
+                    {"get-post-create-in-success": {}},
+                ]
+            )
+        )
+
+    def test_103_create_blog_post_submit_error_handling(self):
+        """Post too short input for a blog post and see 3 errors"""
+
+        self.assertTrue(
+            self._run_tests(
+                [
+                    {"post-login-out-success": {}}, # overrides not nescessary. default settings ok!
+                    {"post-post-create-in-failure": {}}
+                ]
+            )
+        )
+
+    def test_104_create_blog_post_submit_works(self):
+        """Create a poisoned but formal correct new blog post and verify sanitization"""
+
+        logging.info("BLOGENI")
+        logging.info(TestUdPyBlog.blog_entity_context)
+        self.assertTrue(
+            self._run_tests(
+                [
+                    {"post-login-out-success": {}}, # overrides not nescessary. default settings ok!
+                    {"post-post-create-in-success": {}}
+                ]
+            )
+        )
+
+    def test_105_users_can_only_like_posts_from_authors_other_then_themselves(self):
+        """Users can only like/unlike posts from authors other then themselves"""
+        self.assertTrue(
+            self._run_tests(
+                [
+                    {
+                        "post-signup-out-success": {
+                            "signup": {
+                                "data": {
+                                    "username": "testuser2"
+                                }
+                            }
+                        }
+                    },
+                    { #view the recently created post and check if it is likeable
+                        "get-post-view-in-success": {
+                            "post-view": {
+                                "url": (
+                                    "get",
+                                    "/post/{}".format(TestUdPyBlog.blog_entity_context["newpost"]["post_id"][-1])
+                                )
+                            }
+                        }
+                    },
+                    {
+                        "post-post-like-in-success": {
+                            "like": {
+                                "url": (
+                                    "post",
+                                    "/post/{}/like".format(TestUdPyBlog.blog_entity_context["newpost"]["post_id"][-1])
+                                )
+                            }
+                        }
+                    },
+                    {
+                        "post-post-like-in-success": {
+                            "unlike": {
+                                "url": (
+                                    "post",
+                                    "/post/{}/like".format(TestUdPyBlog.blog_entity_context["newpost"]["post_id"][-1])
+                                )
+                            }
                         }
                     }
-                }
+                ]
             )
-            and
-            self._run_tests("test_101_logout_after_signup_works")
         )
 
     def _run_tests(self, selectors):
@@ -546,7 +799,7 @@ class TestUserService(ExpectingTestCase):
                 logging.info("Adding scenarios from the <<{}>> selector ({} scenarios available)".format(group_selector,len(self.tests[group_selector])))
                 if selector[group_selector]:
                     # TBD select ranges, ids, subsets here
-                    for subset_selector in selectors[group_selector]:
+                    for subset_selector in selector[group_selector]:
                         # subset_selector holds the subset selector
                         # we loop incrementally to allow for numeric subsets
                         # at start we ill only supprt ids
@@ -557,12 +810,12 @@ class TestUserService(ExpectingTestCase):
                         if subset_selector.isdigit():
                             if subset_selector >= 0:
                                 if subset_selector < len(self.tests[group_selector]):
-                                    scenario = self.tests[group_selector][subset_selector]
-                                    merge_copy(
-                                        scenario,
-                                        selectors[group_selector][subset_selector]
+                                    scenarios.append(
+                                        merge_copy_dict(
+                                            self.tests[group_selector][subset_selector],
+                                            selector[group_selector][subset_selector]
+                                        )
                                     )
-                                    scenarios.append(scenario)
                                 else:
                                     logging.info("Subset selector '{}' out of range. Group cotains only {} scenarios".format(subset_selector,len(self.tests[group_selector])))
 
@@ -570,11 +823,12 @@ class TestUserService(ExpectingTestCase):
                             else:
                                 if abs(subset_selector) < len(self.tests[group_selector]):
                                     for scenario in range(self.tests[group_selector][(subset_selector):]):
-                                        merge_copy(
-                                            scenario,
-                                            selectors[group_selector][subset_selector]
+                                        scenarios.append(
+                                            merge_copy_dict(
+                                                scenario,
+                                                selector[group_selector][subset_selector]
+                                            )
                                         )
-                                        scenarios.append(scenario)
 
                                 logging.info("Subset selector '{}' out of range. Group cotains only {} scenarios".format(subset_selector,len(self.tests[group_selector])))
 
@@ -582,23 +836,28 @@ class TestUserService(ExpectingTestCase):
                         elif subset_selector[0] == ":" and subset_selector[1:].isdigit():
                             if subset_selector[1:] < len(self.tests[group_selector]):
                                 for scenario in range(self.tests[group_selector][:(subset_selector[1:])]):
-                                    merge_copy(
-                                        scenario,
-                                        selectors[group_selector][subset_selector]
+                                    scenarios.append(
+                                        merge_copy_dict(
+                                            scenario,
+                                            selector[group_selector][subset_selector]
+                                        )
                                     )
-                                    scenarios.append(scenario)
 
                             logging.info("Subset selector '{}' out of range. Group cotains only {} scenarios".format(subset_selector[1:],len(self.tests[group_selector])))
 
                         # no subset selector? must be an id then
                         else:
-                            for i in self.tests[group_selector]:
-                                if subset_selector == "*" or self.tests[selector][i]["id"] == subset_selector:
+                            for i in range(len(self.tests[group_selector])):
+                                if subset_selector == "*" or self.tests[group_selector][i]["id"] == subset_selector:
+                                    logging.info("looping pos {}, group: {}, subset: {}".format(i,group_selector,subset_selector))
                                     scenario = self.tests[group_selector][i]
-                                    merge_copy(
+                                    logging.info(selector[group_selector][subset_selector])
+                                    scenario = merge_copy_dict(
                                         scenario,
-                                        selectors[group_selector][subset_selector]
+                                        selector[group_selector][subset_selector]
                                     )
+                                    logging.info("PRODUKT")
+                                    logging.info(scenario)
                                     scenarios.append(scenario)
 
 
@@ -611,9 +870,10 @@ class TestUserService(ExpectingTestCase):
 
         logging.info("Running {} subtests".format(len(scenarios)))
         for scenario in scenarios:
-            if scenario["reset"]:
+            logging.info(scenario)
+            if scenario["reset"] == True:
                 logging.info("clearing cookies")
-                app.cookiejar.clear()
+                self.app.cookiejar.clear()
 
             if not self._verify_tests():
                 logging.info("Checksum modification detected at test <<{}>>!".format(scenario["subject"]))
@@ -623,47 +883,97 @@ class TestUserService(ExpectingTestCase):
             if scenario["url"]:
                 logging.info("Accessing handler for <<{}>>!".format(scenario["url"]))
                 if scenario["url"][0] == "get":
-                    response = app.get(
+                    response = self.app.get(
                         scenario["url"][1]
                     )
 
                 else:
-                    response = app.post(
+                    response = self.app.post(
                         scenario["url"][1],
                         self._prepare_data(scenario["data"])
                     )
                     logging.info("returning " + str(response.status_code))
-                    logging.info(response.body)
-                    if response.status_code == 302:
-                        response = app.get(
-                            dict(response.headers)["Location"]
-                        )
+                    logging.info(response.headers)
 
-            logging.info("RESOPONSE: {}".format(re.sub(r'\s+',' ',response.body)))
+                if "Blog-Entity-Context" in dict(response.headers):
+                    logging.info(dict(response.headers)["Blog-Entity-Context"])
+                    context = json.loads(dict(response.headers)["Blog-Entity-Context"], object_pairs_hook=deunicodify_hook)
+                    logging.info("JSON PARSED ENTITIES")
+                    logging.info(context)
+                    if "id" in scenario:
+                        if not scenario["id"] in TestUdPyBlog.blog_entity_context:
+                            TestUdPyBlog.blog_entity_context[scenario["id"]] = {}
+
+                        for field in context:
+                            logging.info("adding json field: " + field)
+                            if not field in TestUdPyBlog.blog_entity_context[scenario["id"]]:
+                                TestUdPyBlog.blog_entity_context[scenario["id"]][field] = []
+
+                            TestUdPyBlog.blog_entity_context[scenario["id"]][field].append(context[field])
+
+                logging.info("BLOGENI")
+                logging.info(TestUdPyBlog.blog_entity_context)
+
+                if response.status_code == 302:
+                    response = self.app.get(
+                        dict(response.headers)["Location"]
+                    )
+
+            logging.info("RESOPONSE: {} ({})".format(re.sub(r'\s+',' ',response.body),response.status_code))
             logging.info(scenario["assertions"])
+            negate = "negate" in scenario and scenario["negate"]
             for type in scenario["assertions"]:
-                logging.info(type)
-                #logging.info("RUNNING {} checks for <<{}>>: {}".format(len(scenario["assertions"][type]),type))
                 if type == "in":
-                    logging.info("IN!!")
                     for assertion in scenario["assertions"][type]:
-                        logging.info("... {}".format(assertion))
-                        if not self.expect_in(assertion,response.body,scenario["subject"]):
-                            result = False
+                        logging.info("... {} (negate: {})".format(assertion,negate))
+                        if negate:
+                            if not self.expect_not_in(assertion,response.body,scenario["subject"]):
+                                result = False
+                        else:
+                            if not self.expect_in(assertion,response.body,scenario["subject"]):
+                                result = False
 
+                if type == "not_in":
+                    for assertion in scenario["assertions"][type]:
+                        logging.info("... {} (negate: {})".format(assertion,negate))
+                        if negate:
+                            if not self.expect_in(assertion,response.body,scenario["subject"]):
+                                result = False
+                        else:
+                            if not self.expect_not_in(assertion,response.body,scenario["subject"]):
+                                result = False
 
                 if type == "re":
                     for assertion in scenario["assertions"][type]:
-                        if not self.expect_re(assertion,response.body,scenario["subject"]):
-                            result = False
+                        logging.info("... {} (negate: {})".format(assertion,negate))
+                        if negate:
+                            if not self.expect_not_re(assertion,response.body,scenario["subject"]):
+                                result = False
+
+                        else:
+                            if not self.expect_re(assertion,response.body,scenario["subject"]):
+                                result = False
+
+                if type == "not_re":
+                    for assertion in scenario["assertions"][type]:
+                        logging.info("... {} (negate: {})".format(assertion,negate))
+                        if negate:
+                            if not self.expect_re(assertion,response.body,scenario["subject"]):
+                                result = False
+
+                        else:
+                            if not self.expect_not_re(assertion,response.body,scenario["subject"]):
+                                result = False
 
         return result
 
     def _prepare_data(self, context):
-        return dict(((field, context[field]) for field in context["submit"]))
+        if "submit" in context:
+            return dict(((field, context[field]) for field in context["submit"]))
+        return {}
 
     def _verify_tests(self):
         if hashlib.md5(json.dumps(self.tests)).hexdigest() == self.tests_md5:
             return True
 
-        logging.info("Checksums differ: {} != {}".format(hashlib.md5(json.dumps(self.tests)).hexdigest(), self.tests_md5.hexdigest()))
+        logging.info("Checksums differ: {} != {}".format(hashlib.md5(json.dumps(self.tests)).hexdigest(), self.tests_md5))

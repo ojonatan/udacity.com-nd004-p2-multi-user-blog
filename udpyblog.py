@@ -8,6 +8,7 @@ import webapp2
 import re
 import logging
 import json
+import sys
 
 from webapp2_extras import sessions
 
@@ -77,6 +78,7 @@ class UdPyBlogImage(db.Model):
     created = db.DateTimeProperty(auto_now_add = True)
 
 class UdPyBlogHandler(webapp2.RequestHandler):
+    signup = False
     login = False
     restricted = False
     update = False
@@ -114,6 +116,7 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         params = params or {}
         params["image_url_prefix"] = self.url_prefixed(UdPyBlog.image_view_url_part)
         params["login_page"] = self.login
+        params["signup_page"] = self.signup
         params["url_prefix"] = UdPyBlog.blog_prefix
         if self.user:
             params["user"] = self.user
@@ -178,8 +181,6 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         images_mapped = []
         for image_mapped in UdPyBlogImage.all().filter('post_key =', str(post_key)):
             images_mapped.append(image_mapped)
-        logging.info("maaaaaaaaaaaaaaaaaaaaa");
-        logging.info(",".join(images_mapped));
 
         images_dropped = list(set(images_mapped) - set(images))
         logging.info("RRemoving " + ",".join(images_dropped))
@@ -193,8 +194,6 @@ class UdPyBlogHandler(webapp2.RequestHandler):
             image_placed = UdPyBlogImage.all().filter('blob_key = ', image).get()
             image_placed.post_key = str(post_key)
             image_placed.put()
-
-
 
 class UdPyBlogImageUploadPrepareHandler(blobstore_handlers.BlobstoreUploadHandler, UdPyBlogHandler):
     def get(self):
@@ -248,19 +247,21 @@ class UdPyBlogPostViewHandler(UdPyBlogHandler):
                 logging.info(post_id)
                 logging.info(UdPyBlogPost.get_by_id(int(post_id)))
                 post = UdPyBlogPost.get_by_id(int(post_id))
-                logging.info({ "post": post, "user": self.user, "comment": None })
                 likes_post = False
                 if self.user.liked_posts.filter('post = ',post.key()).count() == 1:
                     logging.info("current user likes this post")
                     likes_post = True
                 logging.info("likes or not")
 
+                logging.info({ "post": post, "user": self.user, "comment": None })
                 self.render("blog_post.html", **{ "post": post, "user": self.user, "comment": None } )
                 return
+
             except:
-                logging.info("EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-                self.render("blog_main.html",error = "ID not found (" + str(post_id) + ")")
+                logging.info(sys.exc_info())
+                self.render("blog_main.html",error = "Error {} ({}))".format(post_id, sys.exc_info()[0]))
                 return
+
         else:
             self.redirect_prefixed('')
 
@@ -308,7 +309,7 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
                 self.redirect(redirect_url)
                 return
 
-            self.redirect_prefixed("")
+            self.redirect_prefixed("post/{}".format(post.key().id()))
             return
 
         posts_user_likes = UdPyBlogPostLikes.all().filter('post =',post.key()).filter('user =',self.user.key())
@@ -345,6 +346,7 @@ class UdPyBlogMainHandler(UdPyBlogHandler):
         )
 
 class UdPyBlogSignupHandler(UdPyBlogHandler):
+    signup = True
     fields = [ 'username','password','verify','email' ]
     required = [ 'username','password' ]
 
@@ -467,10 +469,13 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
 
         else:
             if not self.update:
+                cover_image_key = None
+                if self.args["cover_image"]:
+                    cover_image_key = self.args["cover_image"].key()
                 post = UdPyBlogPost(
                     subject = self.request.get("subject"),
                     summary = self.request.get("summary"),
-                    cover_image = self.args["cover_image"].key(),
+                    cover_image = cover_image_key,
                     content = UdPyBlog.sanitize_post(self.request.get("content")),
                     user = self.user
                 )
@@ -497,6 +502,10 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                 self.args["cover_image"].post = post.key()
                 self.args["cover_image"].put()
 
+            self.response.headers.add_header(
+                "Blog-Entity-Context",
+                '{"post_id": "%s"}' % ( post.key().id() )
+            )
             self.redirect_prefixed("post/{0}".format(post.key().id()))
             return
 
@@ -593,7 +602,11 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
                 comment.subject = self.args["subject"]
 
             comment.put()
-            self.redirect_prefixed("post/{0}".format(post.key().id()))
+            self.response.headers.add_header(
+                "Blog-Entity-Context",
+                '{"comment_id": "%s", "post_id": "%s"}' % ( comment.key().id(), post.key().id() )
+            )
+            self.redirect_prefixed("post/{0}".format(comment.key().id()))
             return
 
         self.render(
@@ -694,6 +707,10 @@ class UdPyBlogPostCommentEditHandler(UdPyBlogPostCommentHandler):
                 comment.subject = self.args["subject"]
 
             comment.put()
+            self.response.headers.add_header(
+                "Blog-Entity-Context",
+                '{"comment_id": "%s", "post_id": "%s"}' % ( comment.key().id(), post.key().id() )
+            )
             self.redirect_prefixed("post/{0}".format(post.key().id()))
             return
 
@@ -800,13 +817,13 @@ class UdPyBlog():
         ('login', UdPyBlogSignupHandlerLogin),
         ('welcome', UdPyBlogSignupSuccessHandler),
         ('post/([0-9]+)', UdPyBlogPostViewHandler),
+        ('post/([0-9]+)/like', UdPyBlogPostLikeHandler),
         ('post/([0-9]+)/update', UdPyBlogPostUpdateHandler),
         ('post/([0-9]+)/comment', UdPyBlogPostCommentHandler),
         ('post/([0-9]+)/comment/([0-9]+)/edit', UdPyBlogPostCommentEditHandler),
         ('post/([0-9]+)/comment/([0-9]+)/delete', UdPyBlogPostCommentDeleteHandler),
         ('init', UdPyBlogInitHandler),
         ('newpost', UdPyBlogPostHandler),
-        ('like/([0-9]+)', UdPyBlogPostLikeHandler),
         ('image/upload_url',UdPyBlogImageUploadPrepareHandler),
         ('image/upload',UdPyBlogImageUploadHandler)
     ]
@@ -913,7 +930,6 @@ class UdPyBlog():
             if match:
                 content = content.replace(quoted, match.group(1) + self.url_prefixed("image/view") + match.group(0))
 
-        reduce(lambda a, kv: a.replace(*kv), replacer, content)
         for (tag, replacement) in cls.forbidden_tags:
             if replacement:
                 replacer = ('<' + tag, '<' + replacement), ('</' + tag + '>', '</' + replacement + '>')
@@ -921,7 +937,8 @@ class UdPyBlog():
                 replacer = ('<' + tag, ''), ('</' + tag + '>', '')
 
             logging.info(replacer)
-            reduce(lambda a, kv: a.replace(*kv), replacer, content)
+            content= reduce(lambda a, kv: a.replace(*kv), replacer, content)
+        logging.info("SANETIZED: "  + content)
 
         return content
 
@@ -931,11 +948,17 @@ class UdPyBlog():
 
     @classmethod
     def render_template(cls, template_file, **params):
+        logging.info("recieved to render!")
+        logging.info(params)
+
         logging.info("----------" + template_file + "-------------")
 
         template = cls.jinja_env.get_template(template_file)
         logging.info("-------q---" + template_file + "-------------")
-        return template.render(params)
+        logging.info(template.render)
+        logging.info(params)
+
+        return template.render(**params)
 
     @classmethod
     def inject(cls, app):

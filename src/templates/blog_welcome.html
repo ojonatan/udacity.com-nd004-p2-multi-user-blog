@@ -4,6 +4,7 @@
 
 <div>Welcome {{ user.username }} to our blog! Please post your first!</div>
 
-<a href="{{ url_prefix }}">home</a>
+<a href="{{ url_prefix }}" data-blog-control="get-home">home</a> or create a
+<a href="{{ url_prefix }}" data-blog-control="get-post-create">new post</a> right away!
 
 {% endblock %}
