@@ -7,16 +7,21 @@ import random
 import webapp2
 import re
 import logging
+import json
+
 from webapp2_extras import sessions
 
 from google.appengine.ext import db
+from google.appengine.ext import blobstore
+from google.appengine.ext.webapp import blobstore_handlers
+from google.appengine.api import app_identity
 
 # Models
 
 class UdPyBlogSession(db.Model):
     session = db.StringProperty(required = True)
     redirect = db.TextProperty(required = True)
-    
+
 class UdPyBlogUser(db.Model):
     username = db.StringProperty(required = True)
     password = db.StringProperty(required = True)
@@ -26,6 +31,8 @@ class UdPyBlogUser(db.Model):
 
 class UdPyBlogPost(db.Model):
     subject = db.StringProperty(required = True)
+    cover_image = db.ReferenceProperty(required = False)
+    summary = db.StringProperty(required = True)
     content = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
     categories = db.ListProperty(db.Key)
@@ -39,12 +46,12 @@ class UdPyBlogPostComment(db.Model):
     user = db.ReferenceProperty(UdPyBlogUser, collection_name='comments')
     post = db.ReferenceProperty(UdPyBlogPost, collection_name='comments')
 
-class UdPyBlogCategory(db.Model):
-    category = db.StringProperty(required = True)
-    created = db.DateTimeProperty(auto_now_add = True)
-    @property
-    def posts(self):
-        return UdPyBlogPost.gql("WHERE categories = :1", self.key())
+#class UdPyBlogCategory(db.Model):
+#    category = db.StringProperty(required = True)
+#    created = db.DateTimeProperty(auto_now_add = True)
+#    @property
+#    def posts(self):
+#        return UdPyBlogPost.gql("WHERE categories = :1", self.key())
 
 class UdPyBlogPostLikes(db.Model):
     post = db.ReferenceProperty(
@@ -58,6 +65,16 @@ class UdPyBlogPostLikes(db.Model):
         collection_name='liked_posts'
     )
 
+class UdPyBlogImage(db.Model):
+    session = db.StringProperty(required = True)
+    user = db.ReferenceProperty(
+        UdPyBlogUser,
+        required=True,
+        collection_name='blobs'
+    )
+    post = db.ReferenceProperty(required = False)
+    blob_key = blobstore.BlobReferenceProperty()
+    created = db.DateTimeProperty(auto_now_add = True)
 
 class UdPyBlogHandler(webapp2.RequestHandler):
     login = False
@@ -67,7 +84,7 @@ class UdPyBlogHandler(webapp2.RequestHandler):
     secret = "HmacSecret"
     salt_length = 13
     logout = False
-    
+
     def dispatch(self):
         # Get a session store for this request.
         self.session_store = sessions.get_store(request=self.request)
@@ -83,53 +100,64 @@ class UdPyBlogHandler(webapp2.RequestHandler):
     def session(self):
         # Returns a session using the default cookie key.
         return self.session_store.get_session()
-        
+
     def write(self, *a, **kw):
         self.response.out.write(*a, **kw)
 
+    def url_prefixed(self, fragment):
+        return self.request.scheme + "://" + self.request.host + UdPyBlog.blog_prefix + fragment
+
     def redirect_prefixed(self, fragment, code=None):
-        self.redirect(UdPyBlog.blog_prefix + fragment, code=code)    
-    
+        self.redirect(UdPyBlog.blog_prefix + fragment, code=code)
+
     def render_str(self, template_file, **params):
+        params = params or {}
+        params["image_url_prefix"] = self.url_prefixed(UdPyBlog.image_view_url_part)
         params["login_page"] = self.login
         params["url_prefix"] = UdPyBlog.blog_prefix
         if self.user:
-            params["username"] = self.user.username
-        
+            params["user"] = self.user
+
         return UdPyBlog.render_template(template_file, **params)
 
-    def render(self, template, **kw):
-        self.write(self.render_str(template, **kw))
-        
+    def render(self, template_file, **kw):
+        self.write(self.render_str(template_file, **kw))
+
+    def render_json(self, payload):
+        self.response.headers['Content-Type'] = 'application/json'
+        self.response.out.write(json.dumps(payload))
+
     def auth(self):
         if self.logout:
-            return            
-            
+            return
+
         if self.user:
             UdPyBlogUser.get_by_id(int(access[1]))
-            
+
         if "access" in self.request.cookies:
             if not self.request.cookies.get("access") and not self.restricted:
                 return
-                
+
             access = self.request.cookies.get("access").split("|")
             if len(access) == 2:
                 user = UdPyBlogUser.get_by_id(int(access[1]))
                 if user and self.validate_user(user, access):
                     self.user = user
                     return
-                
+
                 if not self.restricted:
                     return
+        if not self.restricted:
+            return
 
         # store the original url in order to redirect on success!
         self.session["redirect"] = self.request.url
         self.redirect_prefixed("login")
-            
+
     def make_hash(self, message, salt=None):
         salt = salt or self.make_salt()
         return "%s%s" % (hmac.new(self.secret, message + salt,hashlib.sha256).hexdigest(), salt)
-    
+
     def make_salt(self):
         return "".join( random.choice("abcdef" + string.digits) for x in xrange(self.salt_length) )
 
@@ -138,21 +166,99 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         salt = access[0][(self.salt_length * -1):]
         return access[0] == self.make_hash(user.username, salt)
 
+    def no_cache(self):
+        self.response.headers.add_header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
+        self.response.headers.add_header("Expires","0")
+
+    def process_images(self, content, post_key):
+        return
+        logging.info("checking fo r " + str(post_key));
+
+        images = re.findall("encoded_gs_file:[a-zA-Z0-9]+",content)
+        images_mapped = []
+        for image_mapped in UdPyBlogImage.all().filter('post_key =', str(post_key)):
+            images_mapped.append(image_mapped)
+        logging.info("maaaaaaaaaaaaaaaaaaaaa");
+        logging.info(",".join(images_mapped));
+
+        images_dropped = list(set(images_mapped) - set(images))
+        logging.info("RRemoving " + ",".join(images_dropped))
+
+        for image in images_dropped:
+            for image_placed in UdPyBlogImage.filter('blob_key = ', image):
+                image_placed.delete()
+
+        for image in images:
+            logging.info("Adding image " + image)
+            image_placed = UdPyBlogImage.all().filter('blob_key = ', image).get()
+            image_placed.post_key = str(post_key)
+            image_placed.put()
+
+
+
+class UdPyBlogImageUploadPrepareHandler(blobstore_handlers.BlobstoreUploadHandler, UdPyBlogHandler):
+    def get(self):
+        self.no_cache()
+        bucket = app_identity.get_default_gcs_bucket_name()
+        upload_url = blobstore.create_upload_url(
+            '/image/upload',
+            gs_bucket_name=bucket
+        )
+        self.render_json({
+            "upload_url": upload_url
+        })
+
+class UdPyBlogImageUploadHandler(blobstore_handlers.BlobstoreUploadHandler, UdPyBlogHandler):
+    def post(self):
+        self.auth()
+        try:
+            upload = self.get_uploads()[0]
+            uploaded_image = UdPyBlogImage(
+                session=self.request.cookies["session"],
+                user=self.user,
+                blob_key=upload.key()
+            )
+            uploaded_image.put()
+            self.render_json(
+                {
+                  "location": self.url_prefixed('%s%s' % (UdPyBlog.image_view_url_part, upload.key()))
+                }
+            )
+
+        except:
+            self.error(500)
+
+class UdPyBlogImageViewHandler(blobstore_handlers.BlobstoreDownloadHandler, UdPyBlogHandler):
+    def get(self, image_key):
+        self.auth()
+        logging.info("VIEWER")
+        if not blobstore.get(image_key):
+            self.error(404)
+        else:
+            self.send_blob(image_key)
+
 class UdPyBlogPostViewHandler(UdPyBlogHandler):
     url = "post"
     def get(self, post_id):
         self.auth()
+        logging.info("auth")
         if post_id.isdigit():
+            logging.info("digit")
             try:
+                logging.info(post_id)
+                logging.info(UdPyBlogPost.get_by_id(int(post_id)))
                 post = UdPyBlogPost.get_by_id(int(post_id))
+                logging.info({ "post": post, "user": self.user, "comment": None })
                 likes_post = False
                 if self.user.liked_posts.filter('post = ',post.key()).count() == 1:
                     logging.info("current user likes this post")
                     likes_post = True
-                    
+                logging.info("likes or not")
+
                 self.render("blog_post.html", **{ "post": post, "user": self.user, "comment": None } )
                 return
             except:
+                logging.info("EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
                 self.render("blog_main.html",error = "ID not found (" + str(post_id) + ")")
                 return
         else:
@@ -162,24 +268,30 @@ class UdPyBlogSignupSuccessHandler(UdPyBlogHandler):
     restricted = True
     def get(self):
         self.auth()
-        self.redirect_prefixed("")
+        self.render("blog_welcome.html")
 
 class UdPyBlogSignupHandlerLogout(UdPyBlogHandler):
+    logout = True
+    restricted = False
     def get(self):
+        logging.info("LOGOUT CALLED!!!")
         self.auth()
+        self.response.headers.add_header("Set-Cookie", str("%s=%s; path=/" % ( "session","" ) ) )
+        self.response.headers.add_header("Set-Cookie", str("%s=%s; path=/" % ( "access","" ) ) )
         if not self.user:
+            logging.info("NO USER!!!")
             self.redirect_prefixed("")
             return
-          
-        self.response.headers.add_header("Set-Cookie", str("%s=%s; path=/" % ( "access","" ) ) )
-        self.logout = True
+
+        logging.info("KILL COOKIE!!!")
+        logging.info("KILL SUER!!!")
         self.user = None
         self.redirect_prefixed("")
-        
+
 class UdPyBlogPostLikeHandler(UdPyBlogHandler):
     """Register or unregister (toggle) likes for a specific post. Only
     logged in users other than the author are allowed to like a post."""
-    
+
     restricted = True
     def post(self, post_id):
         self.session["redirect"] = self.request.referer
@@ -195,10 +307,10 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
                 self.session["redirect"] = ""
                 self.redirect(redirect_url)
                 return
-            
+
             self.redirect_prefixed("")
             return
-            
+
         posts_user_likes = UdPyBlogPostLikes.all().filter('post =',post.key()).filter('user =',self.user.key())
         logging.info("post has likes: " + str(posts_user_likes.count()))
         if posts_user_likes.count():
@@ -216,21 +328,25 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
             self.session["redirect"] = ""
             self.redirect(redirect_url)
             return
-            
+
         self.redirect_prefixed("")
         return
-        
+
 class UdPyBlogMainHandler(UdPyBlogHandler):
     def get(self):
         self.auth()
         posts = UdPyBlogPost.all()
-        self.render("blog_main.html", **{ "posts": posts, "user": self.user } )
-        
+        self.render(
+            "blog_main.html",
+            **{
+                "posts": posts,
+                "user": self.user
+            }
+        )
+
 class UdPyBlogSignupHandler(UdPyBlogHandler):
-    username_re = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
-    email_re = re.compile(r"^[\S]+@[\S]+\.[\S]+$")
-    password_re = re.compile(r"^.{3,20}$")
     fields = [ 'username','password','verify','email' ]
+    required = [ 'username','password' ]
 
     errors = 0
     args = {}
@@ -239,7 +355,7 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
         self.auth()
         for field in self.fields:
             self.args[field], self.args['error_' + field] = '',''
-            
+
         self.render("signup.html", **self.args )
 
     def post(self):
@@ -250,7 +366,7 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
 
         if self.errors > 0:
             self.render("signup.html", **self.args )
-            
+
         else:
             access_hash = self.make_hash(self.args['username'])
             salt = access_hash[(self.salt_length * -1):]
@@ -267,66 +383,45 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
                 )
             )
             self.redirect_prefixed("welcome")
-    
-    def validate(self,input):
-        if input == "username":
-            input_username = self.request.get(input)
-            if self.username_re.match(input_username):
-                if not self.login:
-                    users = db.GqlQuery("SELECT * FROM UdPyBlogUser WHERE username = :1", input_username )
-                    if users.count() > 0:
-                        self.errors += 1
-                        return ('',"That user already exists")
-            
-                return (input_username,'')
-            self.errors += 1
-            return ('',"That's not a valid username")
 
-        if input == "password":
-            input_password = self.request.get(input)
-            if self.password_re.match(input_password):
-                return (input_password,'')
-            self.errors += 1
-            return ('',"That's not a valid password")
+    def validate(self,field):
 
-        if input == "verify":
-            input_verify = self.request.get(input)
+        # Check for validity of entered data agains re and length reqs
+        # Higher level checks only if no error here
+        error = UdPyBlog.validate_input(
+            field,
+            self.request.get(field),
+            field in self.required
+        )
+        if error != True:
+            self.errors += 1
+            return (self.request.get(field),error)
+
+        if field == "username":
+            input_username = self.request.get(field)
+            if not self.login:
+                if UdPyBlogUser.all().filter('username =', input_username).count() > 0:
+                    self.errors += 1
+                    return (input_username,"That user already exists")
+
+            return (input_username,'')
+
+        if field == "verify":
+            input_verify = self.request.get(field)
             if "password" in self.args and self.args["password"] != "":
                 if self.args["password"] != input_verify:
                     self.errors += 1
                     return ('',"Your passwords didn't match")
+                return (input_verify, "")
             return ('','')
 
-        if input == "email":
-            input_email = self.request.get(input)
+        if field == "email":
+            input_email = self.request.get(field)
             if input_email == "":
                 return ('','')
-            elif self.email_re.match(input_email):
-                return (input_email,'')
-            else:
-                self.errors += 1
-                return (input_email,"That's not a valid email")
 
-        if input == "subject":
-            input_subject = self.request.get(input)
-            if len(input_subject) >= self.subject_min_length:
-                return (input_subject,'')
-
-            else:
-                self.errors += 1
-                return (input_subject,"Subject not valid or too short")
-
-        if input == "content":
-            input_content = self.request.get(input)
-            if len(input_content) >= self.content_min_length:
-                return (input_content,'')
-
-            else:
-                self.errors += 1
-                return ("","Content not valid or too short")
-
-        if input == "post_id":
-            input_post_id = self.request.get(input)
+        if field == "post_id":
+            input_post_id = self.request.get(field)
             if input_post_id.isdigit():
                 return (input_post_id,"")
 
@@ -334,31 +429,49 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
                 self.errors += 1
                 return ("","Post id missing")
 
+        return (self.request.get(field),'')
+
 class UdPyBlogPostHandler(UdPyBlogSignupHandler):
     restricted = True
-    subject_min_length = 10
-    content_min_length = 10
-    fields = [ 'subject', 'content' ]
-    
-    def post(self):
+    fields = [ 'subject', 'summary', 'content' ]
+    required = fields
+
+    def post(self, post_id=None):
         self.auth()
-        if self.update:
-            self.fields.append('post_id')
-            
+        self.args["update"] = self.update
+
         for field in self.fields:
             self.args[field],self.args['error_' + field] = '',''
             self.args[field],self.args['error_' + field] = self.validate(field)
 
         self.args["update"] = self.update
+        self.args["cover_image"] = None
+        self.args["cover_image_url"] = None
+        if self.request.get('cover_image_url'):
+            self.args["cover_image_url"] = self.request.get('cover_image_url')
+            self.args["cover_image"] = UdPyBlogImage.all().filter(
+                "blob_key =",
+                os.path.basename(
+                    self.request.get('cover_image_url')
+                )
+            ).get()
+
         if self.errors > 0:
-            post = {"subject": "","content": ""}
-            self.render("blog_form.html", **self.args )
+            logging.info("ERRORS: " + str(self.errors) + "")
+            self.args["upload_url_source"] = self.url_prefixed("image/upload_url")
+            self.render(
+                "blog_form.html",
+                **self.args
+            )
             return
+
         else:
             if not self.update:
                 post = UdPyBlogPost(
-                    subject = self.request.get('subject'),
-                    content = self.request.get('content'),
+                    subject = self.request.get("subject"),
+                    summary = self.request.get("summary"),
+                    cover_image = self.args["cover_image"].key(),
+                    content = UdPyBlog.sanitize_post(self.request.get("content")),
                     user = self.user
                 )
             else:
@@ -368,54 +481,77 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                     return
 
                 post.content = self.args["content"]
+                post.summary = self.args["summary"]
                 post.subject = self.args["subject"]
+                if self.args["cover_image"]:
+                    post.cover_image = self.args["cover_image"]
+
+                elif post.cover_image:
+                    logging.info("Deleteing previous cover")
+                    blobstore.delete(post.cover_image.blob_key.key())
+                    post.cover_image.delete()
+                    post.cover_image = None
 
             post.put()
+            if self.args["cover_image"]:
+                self.args["cover_image"].post = post.key()
+                self.args["cover_image"].put()
+
             self.redirect_prefixed("post/{0}".format(post.key().id()))
             return
 
         self.render(
-            "blog_form.html",**{
-                "error": error,
-                "subject": self.request.get("subject"),
-                "content": self.request.get("content"),
-                "created": self.request.get("created")
-            }
+            "blog_form.html",
+            **self.args
         )
 
     def get(self):
         self.auth()
-        self.render("blog_form.html", **self.args)
+        self.render(
+            "blog_form.html",
+            **{
+                "subject": self.request.get("subject"),
+                "content": self.request.get("content"),
+                "post_id": None,
+                "update": self.update,
+                "upload_url_source": self.url_prefixed("image/upload_url")
+            }
+        )
 
 class UdPyBlogPostUpdateHandler(UdPyBlogPostHandler):
     update=True
-    def get(self):
+    def get(self, post_id):
+        self.no_cache()
         self.auth()
-        post_id = self.request.get("post_id")
         if post_id.isdigit():
-            try:
-                post = UdPyBlogPost.get_by_id(int(post_id))
-                if post:
-                    self.render(
-                        "blog_form.html",
-                        **{
-                            "subject": post.subject,
-                            "content": post.content,
-                            "post_id": post_id,
-                            "update": self.update
-                        }
-                    )
-                    return
-            except:
+            post = UdPyBlogPost.get_by_id(int(post_id))
+            if post:
+                self.render(
+                    "blog_form.html",
+                    **{
+                        "subject": post.subject,
+                        "summary": post.summary,
+                        "content": post.content,
+                        "post_id": post_id,
+                        "update": self.update,
+                        "cover_image_url": post.cover_image and self.url_prefixed("{0}{1}".format(UdPyBlog.image_view_url_part,post.cover_image.blob_key.key())),
+                        "upload_url_source": self.url_prefixed("image/upload_url")
+                    }
+                )
+                return
+
+            else:
+                logging.info("ERROR")
                 self.render("blog_main.html",error = "ID not found (" + str(post_id) + ")")
                 return
         else:
             self.redirect_prefixed('')
 
-
 class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
     """Handling comments posted on a post"""
-    
+
+    fields = [ 'subject', 'content' ]
+    required = fields
     restricted = True
     def post(self, post_id):
         self.auth()
@@ -425,12 +561,13 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
         post = UdPyBlogPost.get_by_id(int(post_id))
         if not post:
             self.redirect_prefixed('')
-            
+
         for field in self.fields:
             self.args[field],self.args['error_' + field] = '',''
             self.args[field],self.args['error_' + field] = self.validate(field)
 
         if self.errors > 0:
+            logging.info(self.args)
             self.args["post"] = post
             self.args["user"] = self.user
             self.args["comment"] = None
@@ -445,6 +582,7 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
                     post = post,
                     user = self.user
                 )
+
             else:
                 comment = UdPyBlogPostComment.get_by_id(int(self.args["comment_id"]))
                 if not post or post.user.username != self.user.username:
@@ -470,7 +608,7 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
 
 class UdPyBlogPostCommentDeleteHandler(UdPyBlogPostCommentHandler):
     """Handling comment deletions on a post"""
-    
+
     restricted = True
     def get(self, post_id, comment_id):
         self.auth()
@@ -485,7 +623,7 @@ class UdPyBlogPostCommentDeleteHandler(UdPyBlogPostCommentHandler):
 
 class UdPyBlogPostCommentEditHandler(UdPyBlogPostCommentHandler):
     """Handling comment edits on a post"""
-    
+
     update = True
     restricted = True
     def get(self, post_id, comment_id):
@@ -494,14 +632,14 @@ class UdPyBlogPostCommentEditHandler(UdPyBlogPostCommentHandler):
         if not comment_id or comment.user.key() != self.user.key():
             self.redirect_prefixed("")
             return
-        
+
         post_id = comment.post.key().id()
         logging.info(comment.post.user.username)
         logging.info(comment.post)
         if not comment.post or comment.user.username != self.user.username:
             self.redirect_prefixed("post/{0}".format(post_id))
             return
-            
+
         self.render(
             "blog_post.html",
             **{
@@ -517,7 +655,7 @@ class UdPyBlogPostCommentEditHandler(UdPyBlogPostCommentHandler):
         post = UdPyBlogPost.get_by_id(int(post_id))
         if not post:
             self.redirect_prefixed('')
-            
+
         for field in self.fields:
             self.args[field],self.args['error_' + field] = '',''
             self.args[field],self.args['error_' + field] = self.validate(field)
@@ -568,7 +706,7 @@ class UdPyBlogPostCommentEditHandler(UdPyBlogPostCommentHandler):
                 "created": self.request.get("created")
             }
         )
-   
+
 class UdPyBlogInitHandler(UdPyBlogSignupHandler):
     fields = [ "password" ]
     def get(self):
@@ -580,7 +718,7 @@ class UdPyBlogInitHandler(UdPyBlogSignupHandler):
         for field in self.fields:
             self.args[field],self.args['error_' + field] = '',''
             self.args[field],self.args['error_' + field] = self.validate(field)
-        
+
         if self.errors > 0:
             self.render("init.html", **self.args )
             return
@@ -597,6 +735,7 @@ class UdPyBlogInitHandler(UdPyBlogSignupHandler):
 
 class UdPyBlogSignupHandlerLogin(UdPyBlogSignupHandler):
     fields = [ "username","password" ]
+    required = fields
     login = True
     def get(self):
         self.auth()
@@ -608,23 +747,25 @@ class UdPyBlogSignupHandlerLogin(UdPyBlogSignupHandler):
         for field in self.fields:
             self.args[field],self.args['error_' + field] = '',''
             self.args[field],self.args['error_' + field] = self.validate(field)
-        
+
         if self.errors > 0:
             self.render("login.html", **self.args )
+            logging.info("ERRROOROROR!!! " + str(self.errors))
             return
 
         else:
-            users = db.GqlQuery("SELECT * FROM UdPyBlogUser WHERE username = :1", self.args["username"] )            
-            if users.count() == 1:
-                if self.make_hash(self.args["password"], users[0].salt ) == users[0].password:
-                    self.response.headers.add_header("Set-Cookie", str("%s=%s|%s; path=/" % ( "access", self.make_hash(users[0].username, users[0].salt ), users[0].key().id() ) ) )
-                    self.redirect_prefixed("welcome")
-                    if self.session['redirect']:
+            user = UdPyBlogUser.all().filter('username =', self.args["username"]).get()
+            if user:
+                logging.info("User match!!!")
+                if self.make_hash(self.args["password"], user.salt ) == user.password:
+                    logging.info("Password match!!!")
+                    self.response.headers.add_header("Set-Cookie", str("%s=%s|%s; path=/" % ( "access", self.make_hash(user.username, user.salt ), user.key().id() ) ) )
+                    if 'redirect' in self.session and self.session['redirect']:
                         redirect_url = str(self.session['redirect'])
                         self.session['redirect'] = None
                         self.redirect(redirect_url)
-                        return                        
-                    
+                        return
+
                     self.redirect_prefixed("")
                     return
             else:
@@ -647,9 +788,9 @@ def udpyblog_init_blog():
     )
     return
 
-# Base class 
+# Base class
 class UdPyBlog():
-    """This class serves as a configuration class. It populates all 
+    """This class serves as a configuration class. It populates all
     nescessary variables given a dictionary from via the setup method"""
 
     routes = [
@@ -658,21 +799,50 @@ class UdPyBlog():
         ('logout', UdPyBlogSignupHandlerLogout),
         ('login', UdPyBlogSignupHandlerLogin),
         ('welcome', UdPyBlogSignupSuccessHandler),
-        ('updatepost', UdPyBlogPostUpdateHandler),
         ('post/([0-9]+)', UdPyBlogPostViewHandler),
+        ('post/([0-9]+)/update', UdPyBlogPostUpdateHandler),
         ('post/([0-9]+)/comment', UdPyBlogPostCommentHandler),
         ('post/([0-9]+)/comment/([0-9]+)/edit', UdPyBlogPostCommentEditHandler),
         ('post/([0-9]+)/comment/([0-9]+)/delete', UdPyBlogPostCommentDeleteHandler),
         ('init', UdPyBlogInitHandler),
         ('newpost', UdPyBlogPostHandler),
-        ('like/([0-9]+)', UdPyBlogPostLikeHandler)
+        ('like/([0-9]+)', UdPyBlogPostLikeHandler),
+        ('image/upload_url',UdPyBlogImageUploadPrepareHandler),
+        ('image/upload',UdPyBlogImageUploadHandler)
     ]
-    
+
+    regexp = {
+        "username": r"[a-zA-Z0-9_-]+",
+        "email": r"[\S]+@[\S]+\.[\S]",
+        "subject": r"[^\r\n\t]"
+    }
+
     template_folder = "dist/templates"
     blog_prefix = "/"
     static_path_prefix = ""
     jinja_env = None
-    
+    input_requirements = {
+        "password": {
+            "min": 3,
+            "max": 20
+        },
+        "username": {
+            "min": 3,
+            "max": 20
+        },
+        "summary": {
+            "min": 10,
+            "max": 500
+        },
+        "subject": {
+            "min": 10,
+            "max": 500
+        },
+        "content": {
+            "min": 10,
+            "max": 10000
+        }
+    }
     @classmethod
     def prepare(cls, config = None):
         if config:
@@ -682,14 +852,27 @@ class UdPyBlog():
             if "blog_prefix" in config:
                 cls.blog_prefix = config["blog_prefix"]
 
+            if "forbidden_tags" in config:
+                cls.forbidden_tags = config["forbidden_tags"]
+
+            if "image_view_url_part" in config:
+                cls.image_view_url_part = config["image_view_url_part"]
+
+            if "input_requirements" in config:
+                cls.input_requirements = cls.merge_dicts(
+                    cls.input_requirements,
+                    config["input_requirements"]
+                )
+
         cls.template_dir = os.path.join(
-            os.path.dirname(__file__), 
+            os.path.dirname(__file__),
             cls.template_folder
         )
         cls.jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(cls.template_dir))
-        
+
     @classmethod
     def get_routes(cls):
+        cls.routes.append((UdPyBlog.image_view_url_part + "(.+)",UdPyBlogImageViewHandler))
         if cls.blog_prefix:
             routes_prefixed = []
             for route in cls.routes:
@@ -697,19 +880,75 @@ class UdPyBlog():
             return routes_prefixed
         else:
             return cls.routes
- 
+
+    @classmethod
+    def validate_input(cls, field, input, required):
+        if not input:
+            if required:
+                return "Field empty"
+            else:
+                return True
+
+        if field in cls.input_requirements:
+            if len(input) < cls.input_requirements[field]["min"]:
+                return "Input too short"
+
+            if len(input) > cls.input_requirements[field]["max"]:
+                return "Input too long"
+
+        if field in cls.regexp:
+            if not re.match(
+                cls.regexp[field],
+                input
+            ):
+                return "Input contains illegal characters"
+        return True
+
+    @classmethod
+    def sanitize_post(cls, content):
+        """Fix all blob references to actual image viewing urls. Replace/filter forbidden tags."""
+        quoteds = re.findall(r'["\'][^"\']+["\']',content)
+        for quoted in quoteds:
+            match = re.search(r'encoded_gs_file:[^"\']+(["\'])$',quoted)
+            if match:
+                content = content.replace(quoted, match.group(1) + self.url_prefixed("image/view") + match.group(0))
+
+        reduce(lambda a, kv: a.replace(*kv), replacer, content)
+        for (tag, replacement) in cls.forbidden_tags:
+            if replacement:
+                replacer = ('<' + tag, '<' + replacement), ('</' + tag + '>', '</' + replacement + '>')
+            else:
+                replacer = ('<' + tag, ''), ('</' + tag + '>', '')
+
+            logging.info(replacer)
+            reduce(lambda a, kv: a.replace(*kv), replacer, content)
+
+        return content
+
     @classmethod
     def error_handler(cls, request, response, exception):
         response.out.write(cls.render_template("error.html", exception=exception, response=response))
 
     @classmethod
     def render_template(cls, template_file, **params):
+        logging.info("----------" + template_file + "-------------")
+
         template = cls.jinja_env.get_template(template_file)
+        logging.info("-------q---" + template_file + "-------------")
         return template.render(params)
 
     @classmethod
     def inject(cls, app):
         app.error_handlers[404] = cls.error_handler
         app.error_handlers[403] = cls.error_handler
-        app.error_handlers[500] = cls.error_handler
-     
+
+    @classmethod
+    def merge_dicts(cls, *dict_args):
+        """
+        Given any number of dicts, shallow copy and merge into a new dict,
+        precedence goes to key value pairs in latter dicts.
+        """
+        result = {}
+        for dictionary in dict_args:
+            result.update(dictionary)
+        return result

@@ -35,6 +35,12 @@ module.exports = function(grunt){
 						flatten: true,
 						src: 'src/templates/*.html',
 						dest: 'dist/templates'
+					},
+					{
+						expand: true,
+						flatten: true,
+						src: 'dist/bower_components/bootstrap-fileinput/css/fileinput.min.css',
+						dest: 'dist/css'
 					}
 				]
 			},

@@ -3,6 +3,30 @@ api_version: 1
 threadsafe: true
 
 handlers:
+
+- url: /fonts/(.*\.eot)
+  mime_type: application/vnd.ms-fontobject
+  static_files: dist/bower_components/bootstrap/fonts/\1
+  upload: dist/bower_components/bootstrap/fonts/(.*\.eot)
+
+- url: /fonts/(.*\.eot)
+  mime_type: application/vnd.ms-fontobject
+  static_files: dist/bower_components/bootstrap/fonts/\1
+  upload: dist/bower_components/bootstrap/fonts/(.*\.eot)
+
+- url: /fonts/(.*\.woff)
+  mime_type: application/x-font-woff
+  static_files: dist/bower_components/bootstrap/fonts/\1
+  upload: dist/bower_components/bootstrap/fonts/(.*\.woff)
+
+- url: /fonts/(.*\.woff2)
+  mime_type: application/x-font-woff2
+  static_files: dist/bower_components/bootstrap/fonts/\1
+  upload: dist/bower_components/bootstrap/fonts/(.*\.woff2)
+  
+- url: /bower_components
+  static_dir: dist/bower_components
+
 - url: /css
   static_dir: dist/css
 
