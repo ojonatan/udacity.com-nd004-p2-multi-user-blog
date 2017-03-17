@@ -605,6 +605,11 @@ class TestUdPyBlog(ExpectingTestCase):
                             scenario_cursor[override["field"]] = context[replace_field]
                             logging.info("overriding " + override["template"] + " with " + scenario_cursor[override["field"]] )
 
+                        logging.info("+-+-+-+-ARGS+-+-+-+-+")
+                        logging.info(args)
+                        logging.info("+-+-+-+-OVERRIDE+-+-+-+-+")
+                        logging.info(scenario_cursor)
+
 
         return scenario_overridden
 

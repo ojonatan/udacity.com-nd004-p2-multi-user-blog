@@ -1066,7 +1066,7 @@ tests = {
                                                 "scope": "newpost",
                                                 "field": "subject"
                                             },
-                                            "field": "subject"
+                                            "field": "test_subject"
                                         }
                                     ]
                                 },

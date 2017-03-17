@@ -633,6 +633,10 @@ class UdPyBlogPostUpdateHandler(UdPyBlogPostHandler):
         if post_id.isdigit():
             post = UdPyBlogPost.get_by_id(int(post_id))
             if post:
+                if post.user.key() != self.user.key():
+                    self.redirect_prefixed('post/{}'.format(post_id))
+                    return
+
                 self.render(
                     "blog_form.html",
                     **{
