@@ -9,6 +9,7 @@ import re
 import logging
 import json
 import sys
+import cgi
 
 from webapp2_extras import sessions
 
@@ -35,7 +36,6 @@ class UdPyBlogEntity(db.Model):
             {
             }
         )
-
 
 class UdPyBlogSession(UdPyBlogEntity):
     legit = True
@@ -79,17 +79,17 @@ class UdPyBlogPostComment(UdPyBlogEntity):
     user = db.ReferenceProperty(UdPyBlogUser, collection_name='comments')
     post = db.ReferenceProperty(UdPyBlogPost, collection_name='comments')
     @classmethod
-    def empty(cls):
-        return UdPyBlogEmptyModel(
-            {
-                "subject": "",
-                "content": "",
-                "created": "",
-                "categories": "",
-                "user": None,
-                "post": None
-            }
-        )
+    def empty(cls, **attributes):
+        defaults = {
+            "subject": "",
+            "content": "",
+            "created": "",
+            "categories": "",
+            "user": None,
+            "post": None
+        }
+        defaults.update(attributes)
+        return UdPyBlogEmptyModel(defaults)
 
 
 #class UdPyBlogCategory(db.Model):
@@ -317,6 +317,7 @@ class UdPyBlogPostViewHandler(UdPyBlogHandler):
                 logging.info("likes or not")
                 logging.info(UdPyBlogPostComment.empty())
 
+
                 logging.info({ "post": post, "user": self.user })
                 self.render(
                     "blog_post.html",
@@ -501,6 +502,12 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
 
             return (self.request.get(field),'')
 
+        if field == "subject":
+            return (cgi.escape(self.request.get(field)),'')
+
+        if field == "summary":
+            return (cgi.escape(self.request.get(field)),'')
+
         if field == "verify":
             input_verify = self.request.get(field)
             if "password" in self.args and self.args["password"] != "":
@@ -565,6 +572,7 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                 cover_image_key = None
                 if self.args["cover_image"]:
                     cover_image_key = self.args["cover_image"].key()
+
                 post = UdPyBlogPost(
                     subject = self.request.get("subject"),
                     summary = self.request.get("summary"),
@@ -573,7 +581,7 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                     user = self.user
                 )
             else:
-                post = UdPyBlogPost.get_by_id(int(self.args["post_id"]))
+                post = UdPyBlogPost.get_by_id(int(post_id))
                 if not post or post.user.username != self.user.username:
                     self.redirect_prefixed("post/{0}".format(self.args["post_id"]))
                     return
@@ -634,7 +642,7 @@ class UdPyBlogPostUpdateHandler(UdPyBlogPostHandler):
             post = UdPyBlogPost.get_by_id(int(post_id))
             if post:
                 if post.user.key() != self.user.key():
-                    self.redirect_prefixed('post/{}'.format(post_id))
+                    self.redirect_prefixed('post/{}'.format(post.key().id()))
                     return
 
                 self.render(
@@ -664,6 +672,25 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
     fields = [ 'subject', 'content' ]
     required = fields
     restricted = True
+    def validate(self,field):
+
+        # Check for validity of entered data agains re and length reqs
+        # Higher level checks only if no error here
+        error = UdPyBlog.validate_input(
+            field,
+            self.request.get(field),
+            field in self.required
+        )
+        if error != True:
+            self.errors += 1
+            return (self.request.get(field),error)
+
+        if field == "subject":
+            return (cgi.escape(self.request.get(field)),'')
+
+        if field == "content":
+            return (cgi.escape(self.request.get(field)),'')
+
     def post(self, post_id):
         self.auth()
         if self.update:
@@ -680,16 +707,24 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
         if self.errors > 0:
             logging.info(self.args)
             self.args["post"] = post
-            self.args["user"] = self.user
-            self.args["comment"] = None
-            self.render("blog_post.html", **self.args )
+            self.args["comment"] = UdPyBlogPostComment.empty(
+                **{
+                    "subject": self.args["subject"],
+                    "content": self.args["content"]
+                }
+            )
+
+            self.render(
+                "blog_post.html",
+                **self.args
+            )
             return
 
         else:
             if not self.update:
                 comment = UdPyBlogPostComment(
-                    subject = self.request.get('subject'),
-                    content = self.request.get('content'),
+                    subject = self.args["subject"],
+                    content = self.args["content"],
                     post = post,
                     user = self.user
                 )
@@ -697,7 +732,7 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
             else:
                 comment = UdPyBlogPostComment.get_by_id(int(self.args["comment_id"]))
                 if not post or post.user.username != self.user.username:
-                    self.redirect_prefixed("post/{0}".format(self.args["post_id"]))
+                    self.redirect_prefixed("post/{0}".format(int(post_id)))
                     return
 
                 comment.content = self.args["content"]
@@ -707,8 +742,7 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
 
             blog_entity_context = {
                 "post_id": post.key().id(),
-                "comment_id": comment.key().id(),
-                "username": self.user.username
+                "comment_id": comment.key().id()
             }
 
             self.response.headers.add_header(
@@ -716,16 +750,19 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
                 json.dumps(blog_entity_context)
             )
 
-            self.redirect_prefixed("post/{0}".format(comment.key().id()))
+            self.redirect_prefixed("post/{0}".format(post.key().id()))
             return
 
         self.render(
             "blog_post.html",**{
                 "error": error,
-                "comment": None,
-                "post": post,
-                "subject": self.request.get("subject"),
-                "content": self.request.get("content")
+                "comment": UdPyBlogPostComment.empty(
+                    **{
+                        "subject": self.args["content"],
+                        "content": self.args["subject"]
+                    }
+                ),
+                "post": post
             }
         )
 

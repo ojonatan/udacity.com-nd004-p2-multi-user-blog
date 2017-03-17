@@ -120,6 +120,36 @@ scenarios = {
             'overrides': {}
         }
     ],
+    # Scenarios validating post updates actually work
+    'post-post-update-in-success': [
+        {
+            'scope': 'post-post-update',
+            'subject': 'Update post works',
+            'request': {
+                'method': 'post',
+                'url': ''
+            },
+            'reset': False, # reset cookies before execution
+            'data': {
+                'subject': '',
+                'summary': '',
+                'content': '',
+                'submit': [
+                    'subject',
+                    'summary',
+                    'content'
+                ]
+            },
+            'assertions': {
+                'in': [
+                    ' data-blog-control="get-logout"',
+                    ' data-blog-control="get-post-update"'
+                ],
+                're': []
+            },
+            'overrides': {}
+        }
+    ],
     # Scenarios testing the update post form
     'get-post-update-in-success': [
         {
@@ -1224,6 +1254,159 @@ tests = {
                                     ]
                                 },
                                 "target": [ "assertions" ]
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "group": "post-post-update-in-success",
+                "filter": {
+                    "selected": "*",
+                    "overrides": {
+                        "post-post-update": [
+                            {
+                                "field": "url",
+                                "template": "/post/{post_id}/update",
+                                "replace": {
+                                    "url": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "newpost",
+                                                "field": "post_id"
+                                            },
+                                            "field": "post_id"
+                                        }
+                                    ]
+                                },
+                                "target": [ "request" ]
+                            },
+                            {
+                                "field": "subject",
+                                "template": "TestSubjectUPDATE: {subject}",
+                                "replace": {
+                                    "subject": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "newpost",
+                                                "field": "subject"
+                                            },
+                                            "field": "subject"
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            },
+                            {
+                                "field": "summary",
+                                "template": "TestSummaryUPDATE: {summary}",
+                                "replace": {
+                                    "summary": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "newpost",
+                                                "field": "summary"
+                                            },
+                                            "field": "summary"
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            },
+                            {
+                                "field": "content",
+                                "template": "TestContentUPDATE: {content}",
+                                "replace": {
+                                    "content": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "newpost",
+                                                "field": "content"
+                                            },
+                                            "field": "content"
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            },
+                            {
+                                "field": "re",
+                                "template": ' data-blog-content-element="subject"[^>]*>\s*{subject}\s*<',
+                                "replace": {
+                                    "subject": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "post-post-update",
+                                                "field": "subject"
+                                            },
+                                            "field": "subject"
+                                        }
+                                    ]
+                                },
+                                "target": [ "assertions" ]
+                            },
+                            {
+                                "field": "re",
+                                "template": ' data-blog-content-element="summary"[^>]*>\s*{summary}\s*<',
+                                "replace": {
+                                    "summary": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "post-post-update",
+                                                "field": "summary"
+                                            },
+                                            "field": "summary"
+                                        }
+                                    ]
+                                },
+                                "target": [ "assertions" ]
+                            },
+                            {
+                                "field": "re",
+                                "template": ' data-blog-content-element="content"[^>]*>\s*{content}\s*<',
+                                "replace": {
+                                    "content": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "post-post-update",
+                                                "field": "content"
+                                            },
+                                            "field": "content"
+                                        }
+                                    ]
+                                },
+                                "target": [ "assertions" ]
+                            },
+                            {
+                                "field": "subject",
+                                "template": 'View details of just created blog post with subject <<{test_subject}>>',
+                                "replace": {
+                                    "test_subject": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "post-post-update",
+                                                "field": "subject"
+                                            },
+                                            "field": "subject"
+                                        }
+                                    ]
+                                },
+                                "target": [ ]
                             }
                         ]
                     }
