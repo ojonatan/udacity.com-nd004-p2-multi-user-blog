@@ -11,7 +11,7 @@
 				<input type="text" name="username" id="username" value="{{ username }}" />
 			</td>
 			<td>
-				<span style="color:red">{{ error_username }}</span>
+				<span style="color:red" data-blog-error="username">{{ error_username }}</span>
 			</td>
 		</tr>
 		<tr>
@@ -22,12 +22,12 @@
 				<input type="password" name="password" id="password" />
 			</td>
 			<td>
-				<span style="color:red">{{ error_password }}</span>
+				<span style="color:red" data-blog-error="password">{{ error_password }}</span>
 			</td>
 		</tr>
 	</table>
 
-	<div class="error">{{ error }}</div>
+	<div class="error" data-blog-error="login">{{ error }}</div>
 	<input type="submit"  data-blog-control="post-login" />
 
 	No Account yet? <a href="signup" data-blog-control="get-signup">Sign up right away!</a>

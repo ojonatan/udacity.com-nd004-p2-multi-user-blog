@@ -19,18 +19,49 @@ from google.appengine.api import app_identity
 
 # Models
 
-class UdPyBlogSession(db.Model):
+class UdPyBlogEmptyModel():
+    legit = False
+    def __init__(self, properties):
+        for property in properties:
+            setattr(self, property, properties[property])
+
+    def key(self):
+        return ""
+
+class UdPyBlogEntity(db.Model):
+    @classmethod
+    def empty(cls):
+        return UdPyBlogEmptyModel(
+            {
+            }
+        )
+
+
+class UdPyBlogSession(UdPyBlogEntity):
+    legit = True
     session = db.StringProperty(required = True)
     redirect = db.TextProperty(required = True)
 
-class UdPyBlogUser(db.Model):
+class UdPyBlogUser(UdPyBlogEntity):
+    legit = True
     username = db.StringProperty(required = True)
     password = db.StringProperty(required = True)
     salt = db.StringProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
     lastlog = db.DateTimeProperty(auto_now_add = True)
 
-class UdPyBlogPost(db.Model):
+    @classmethod
+    def empty(cls):
+        return UdPyBlogEmptyModel(
+            {
+                "username": "",
+                "created": "",
+                "lastlog": ""
+            }
+        )
+
+class UdPyBlogPost(UdPyBlogEntity):
+    legit = True
     subject = db.StringProperty(required = True)
     cover_image = db.ReferenceProperty(required = False)
     summary = db.StringProperty(required = True)
@@ -39,13 +70,27 @@ class UdPyBlogPost(db.Model):
     categories = db.ListProperty(db.Key)
     user = db.ReferenceProperty(UdPyBlogUser, collection_name='posts')
 
-class UdPyBlogPostComment(db.Model):
+class UdPyBlogPostComment(UdPyBlogEntity):
+    legit = True
     subject = db.StringProperty(required = True)
     content = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
     categories = db.ListProperty(db.Key)
     user = db.ReferenceProperty(UdPyBlogUser, collection_name='comments')
     post = db.ReferenceProperty(UdPyBlogPost, collection_name='comments')
+    @classmethod
+    def empty(cls):
+        return UdPyBlogEmptyModel(
+            {
+                "subject": "",
+                "content": "",
+                "created": "",
+                "categories": "",
+                "user": None,
+                "post": None
+            }
+        )
+
 
 #class UdPyBlogCategory(db.Model):
 #    category = db.StringProperty(required = True)
@@ -55,6 +100,7 @@ class UdPyBlogPostComment(db.Model):
 #        return UdPyBlogPost.gql("WHERE categories = :1", self.key())
 
 class UdPyBlogPostLikes(db.Model):
+    legit = True
     post = db.ReferenceProperty(
         UdPyBlogPost,
         required=True,
@@ -67,6 +113,7 @@ class UdPyBlogPostLikes(db.Model):
     )
 
 class UdPyBlogImage(db.Model):
+    legit = True
     session = db.StringProperty(required = True)
     user = db.ReferenceProperty(
         UdPyBlogUser,
@@ -118,6 +165,7 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         params["login_page"] = self.login
         params["signup_page"] = self.signup
         params["url_prefix"] = UdPyBlog.blog_prefix
+        params["user"] = UdPyBlogUser.empty()
         if self.user:
             params["user"] = self.user
 
@@ -131,30 +179,44 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         self.response.out.write(json.dumps(payload))
 
     def auth(self):
+        logging.info("+++++++++++ 1")
         if self.logout:
             return
 
+        logging.info("+++++++++++ 2")
         if self.user:
             UdPyBlogUser.get_by_id(int(access[1]))
 
+        logging.info("+++++++++++ 3")
         if "access" in self.request.cookies:
             if not self.request.cookies.get("access") and not self.restricted:
+                access = self.request.cookies.get("access").split("|")
                 return
+
+            logging.info("+++++++++++ 5")
 
             access = self.request.cookies.get("access").split("|")
             if len(access) == 2:
+                logging.info("+++++++++++ 6")
                 user = UdPyBlogUser.get_by_id(int(access[1]))
                 if user and self.validate_user(user, access):
+                    logging.info("+++++++++++ 7 LOGGED IN AS {}".format(user.username))
                     self.user = user
                     return
 
+                logging.info("+++++++++++ 8")
+
                 if not self.restricted:
+                    logging.info("+++++++++++ 9")
                     return
         if not self.restricted:
+            logging.info("+++++++++++ 10")
             return
 
+        logging.info("+++++++++++ 11")
         # store the original url in order to redirect on success!
         self.session["redirect"] = self.request.url
+        logging.info("+++++++++++ 12")
         self.redirect_prefixed("login")
 
     def make_hash(self, message, salt=None):
@@ -248,13 +310,21 @@ class UdPyBlogPostViewHandler(UdPyBlogHandler):
                 logging.info(UdPyBlogPost.get_by_id(int(post_id)))
                 post = UdPyBlogPost.get_by_id(int(post_id))
                 likes_post = False
-                if self.user.liked_posts.filter('post = ',post.key()).count() == 1:
+                if self.user and self.user.liked_posts.filter('post = ',post.key()).count() == 1:
                     logging.info("current user likes this post")
                     likes_post = True
-                logging.info("likes or not")
 
-                logging.info({ "post": post, "user": self.user, "comment": None })
-                self.render("blog_post.html", **{ "post": post, "user": self.user, "comment": None } )
+                logging.info("likes or not")
+                logging.info(UdPyBlogPostComment.empty())
+
+                logging.info({ "post": post, "user": self.user })
+                self.render(
+                    "blog_post.html",
+                    **{
+                        "post": post,
+                        "comment": UdPyBlogPostComment.empty()
+                    }
+                )
                 return
 
             except:
@@ -275,17 +345,13 @@ class UdPyBlogSignupHandlerLogout(UdPyBlogHandler):
     logout = True
     restricted = False
     def get(self):
-        logging.info("LOGOUT CALLED!!!")
         self.auth()
         self.response.headers.add_header("Set-Cookie", str("%s=%s; path=/" % ( "session","" ) ) )
         self.response.headers.add_header("Set-Cookie", str("%s=%s; path=/" % ( "access","" ) ) )
         if not self.user:
-            logging.info("NO USER!!!")
             self.redirect_prefixed("")
             return
 
-        logging.info("KILL COOKIE!!!")
-        logging.info("KILL SUER!!!")
         self.user = None
         self.redirect_prefixed("")
 
@@ -295,41 +361,63 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
 
     restricted = True
     def post(self, post_id):
-        self.session["redirect"] = self.request.referer
+        logging.info("<><><><>LIKE HANDLER CALLES<><><>")
+
+        if self.request.referer:
+            self.session["redirect"] = self.request.referer
+
         self.auth()
         if not self.user:
+            logging.info("||||||||||||||||||< BAD LOGO!!!!!!!!!!!! <<<<")
             self.redirect_prefixed("")
             return
 
         post = UdPyBlogPost.get_by_id(int(post_id))
         if not post or post.user.username == self.user.username:
+            if not post:
+                logging.info(")))))))))))))))) BAD POST <<<<")
+            if post.user.username == self.user.username:
+                logging.info("(((((((((((((((( BAD UUUUUUUUSER <<<<")
+
             if self.session["redirect"]:
                 redirect_url = self.session["redirect"]
                 self.session["redirect"] = ""
                 self.redirect(redirect_url)
                 return
 
-            self.redirect_prefixed("post/{}".format(post.key().id()))
+            self.error("403")
+            self.render("error.html")
             return
 
+        logging.info(":::::::::::::::::::: ALIIIIIIIIIIIIIIIIIIIIIIIIII BAD POST <<<<")
         posts_user_likes = UdPyBlogPostLikes.all().filter('post =',post.key()).filter('user =',self.user.key())
+        logging.info("<><><>>>>>> 1 <<<<><><><>>>>>>>")
         logging.info("post has likes: " + str(posts_user_likes.count()))
+        logging.info("<><><>>>>>> 2 <<<<><><><>>>>>>>")
         if posts_user_likes.count():
+            logging.info("<><><>>>>>> 3 <<<<><><><>>>>>>>")
             for post_user_likes in posts_user_likes:
+                logging.info("<><><>>>>>> 4 <<<<><><><>>>>>>>")
                 post_user_likes.delete()
         else:
+            logging.info("<><><>>>>>> 5 <<<<><><><>>>>>>>")
             post_like = UdPyBlogPostLikes(
                 post=post,
                 user=self.user
             )
+            logging.info("<><><>>>>>> 6 <<<<><><><>>>>>>>")
             post_like.put()
 
-        if self.session["redirect"]:
+        logging.info("<><><>>>>>> 7 <<<<><><><>>>>>>>")
+        if "redirect" in self.session:
+            logging.info("<><><>>>>>> 8 <<<<><><><>>>>>>>")
+            logging.info(" <| <| <|  <|  <|  <|  <|  <|  <|  <|  <|  <| REDIREC SET: " + self.session["redirect"])
             redirect_url = self.session["redirect"]
             self.session["redirect"] = ""
             self.redirect(redirect_url)
             return
 
+        logging.info(" <| <| <|  <|  <|  <|  <|  <|  <|  <|  <|  <| HOOOOOOOOOOOOOOME")
         self.redirect_prefixed("")
         return
 
@@ -340,8 +428,7 @@ class UdPyBlogMainHandler(UdPyBlogHandler):
         self.render(
             "blog_main.html",
             **{
-                "posts": posts,
-                "user": self.user
+                "posts": posts
             }
         )
 
@@ -384,6 +471,13 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
                     "%s=%s|%s; path=/" % ( "access", access_hash, user.key().id() )
                 )
             )
+            blog_entity_context = {
+                "username": user.username
+            }
+            self.response.headers.add_header(
+                "Blog-Entity-Context",
+                json.dumps(blog_entity_context)
+            )
             self.redirect_prefixed("welcome")
 
     def validate(self,field):
@@ -400,13 +494,12 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
             return (self.request.get(field),error)
 
         if field == "username":
-            input_username = self.request.get(field)
             if not self.login:
-                if UdPyBlogUser.all().filter('username =', input_username).count() > 0:
+                if UdPyBlogUser.all().filter('username =', self.request.get(field)).count() > 0:
                     self.errors += 1
-                    return (input_username,"That user already exists")
+                    return (self.request.get(field),"That user already exists")
 
-            return (input_username,'')
+            return (self.request.get(field),'')
 
         if field == "verify":
             input_verify = self.request.get(field)
@@ -502,9 +595,14 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                 self.args["cover_image"].post = post.key()
                 self.args["cover_image"].put()
 
+            blog_entity_context = {
+                "post_id": post.key().id(),
+                "username": self.user.username
+            }
+
             self.response.headers.add_header(
                 "Blog-Entity-Context",
-                '{"post_id": "%s"}' % ( post.key().id() )
+                json.dumps(blog_entity_context)
             )
             self.redirect_prefixed("post/{0}".format(post.key().id()))
             return
@@ -602,10 +700,18 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
                 comment.subject = self.args["subject"]
 
             comment.put()
+
+            blog_entity_context = {
+                "post_id": post.key().id(),
+                "comment_id": comment.key().id(),
+                "username": self.user.username
+            }
+
             self.response.headers.add_header(
                 "Blog-Entity-Context",
-                '{"comment_id": "%s", "post_id": "%s"}' % ( comment.key().id(), post.key().id() )
+                json.dumps(blog_entity_context)
             )
+
             self.redirect_prefixed("post/{0}".format(comment.key().id()))
             return
 
@@ -657,7 +763,6 @@ class UdPyBlogPostCommentEditHandler(UdPyBlogPostCommentHandler):
             "blog_post.html",
             **{
                 "post": comment.post,
-                "user": self.user,
                 "comment": comment,
                 "update": self.update
             }
@@ -707,10 +812,17 @@ class UdPyBlogPostCommentEditHandler(UdPyBlogPostCommentHandler):
                 comment.subject = self.args["subject"]
 
             comment.put()
+            blog_entity_context = {
+                "post_id": post.key().id(),
+                "comment_id": comment.key().id(),
+                "username": self.user.username
+            }
+
             self.response.headers.add_header(
                 "Blog-Entity-Context",
-                '{"comment_id": "%s", "post_id": "%s"}' % ( comment.key().id(), post.key().id() )
+                json.dumps(blog_entity_context)
             )
+
             self.redirect_prefixed("post/{0}".format(post.key().id()))
             return
 
@@ -777,6 +889,13 @@ class UdPyBlogSignupHandlerLogin(UdPyBlogSignupHandler):
                 if self.make_hash(self.args["password"], user.salt ) == user.password:
                     logging.info("Password match!!!")
                     self.response.headers.add_header("Set-Cookie", str("%s=%s|%s; path=/" % ( "access", self.make_hash(user.username, user.salt ), user.key().id() ) ) )
+                    blog_entity_context = {
+                        "username": user.username
+                    }
+                    self.response.headers.add_header(
+                        "Blog-Entity-Context",
+                        json.dumps(blog_entity_context)
+                    )
                     if 'redirect' in self.session and self.session['redirect']:
                         redirect_url = str(self.session['redirect'])
                         self.session['redirect'] = None
@@ -852,7 +971,7 @@ class UdPyBlog():
             "max": 500
         },
         "subject": {
-            "min": 10,
+            "min": 6,
             "max": 500
         },
         "content": {
@@ -944,7 +1063,14 @@ class UdPyBlog():
 
     @classmethod
     def error_handler(cls, request, response, exception):
-        response.out.write(cls.render_template("error.html", exception=exception, response=response))
+        response.out.write(
+            cls.render_template(
+                "error.html",
+                exception=exception,
+                response=response,
+                user=UdPyBlogUser.empty()
+            )
+        )
 
     @classmethod
     def render_template(cls, template_file, **params):
@@ -964,6 +1090,7 @@ class UdPyBlog():
     def inject(cls, app):
         app.error_handlers[404] = cls.error_handler
         app.error_handlers[403] = cls.error_handler
+        app.error_handlers[500] = cls.error_handler
 
     @classmethod
     def merge_dicts(cls, *dict_args):

@@ -16,7 +16,7 @@
 
         <a href="{{url_prefix}}post/{{post.key().id()}}" data-blog-control="get-post-view">read more</a><br>
 
-		{% if user and user.username != post.user.username %}
+		{% if user.legit and user.username != post.user.username %}
 		<form action="{{url_prefix}}post/{{post.key().id()}}/like" method="post" data-blog-form="post-post-like">
 			{% if user.liked_posts.filter('post = ',post.key()).count() == 1 %}
 			<button type="submit" data-blog-control="post-unlike">Unlike!</button>
@@ -29,7 +29,7 @@
     <hr />
 	{% endfor %}
 
-	{% if user %}
+	{% if user.legit %}
 <a href="{{url_prefix}}newpost" data-blog-control="get-post-create">new post!!</a>
 	{% endif %}
 

@@ -18,7 +18,7 @@
 		<div class="container">
 {% if not login_page %}
 
-{% if user %}
+{% if user.legit %}
 		<span class="user-status user-logged-in">{{user.username}}</span> <a href="{{url_prefix}}logout" data-blog-control="get-logout">logout</a>
 		<hr>
 {% else %}

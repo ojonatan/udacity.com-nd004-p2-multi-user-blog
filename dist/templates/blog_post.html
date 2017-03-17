@@ -50,7 +50,7 @@
 			<label for="subject">Subject</label>
 		</div>
 		<input type="text" name="subject" id="subject" value="{{comment.subject}}" />
-		<span style="color:red">{{ error_subject }}</span>
+		<span style="color:red" data-blog-error="subject">{{ error_subject }}</span>
 
 
 		<div>
@@ -58,7 +58,7 @@
 		</div>
 
 		<textarea name="content">{{comment.content}}</textarea>
-		<span style="color:red">{{ error_content }}</span>
+		<span style="color:red" data-blog-error="content">{{ error_content }}</span>
 
 		<div class="error">{{error}}</div>
 		<input type="submit" />
@@ -66,9 +66,9 @@
 	</form>
 	{% endif %}
 
-	{% if post.user.key() == user.key() %}
+	{% if user.legit and post.user.key() == user.key() %}
 <a href="{{url_prefix}}post/{{post.key().id()}}/update" data-blog-control="get-post-update">update post</a><br />
-	{% else %}
+	{% elif user.legit %}
 <form action="{{url_prefix}}post/{{post.key().id()}}/like" method="post" data-blog-form="post-form-like">
 		{% if user.liked_posts.filter('post = ',post.key()).count() == 1 %}
 <button type="submit" data-blog-control="post-unlike">Unlike!</button>
