@@ -226,14 +226,14 @@ Body:
         dump_file.close()
 
 class TestUdPyBlogTools():
-    def makeString(self,  **params):
+    def makeString(self, params):
         return "".join( random.choice(string.letters + string.digits) for x in xrange(params["length"]) )
 
     def makeTimestamp(self):
-        return str(int(time.time()))
+        return int(time.time())
 
-    def getBlogEntityContext(self, **params):
-        return TestUdPyBlog._get_blog_entity_context(**params)
+    def getBlogEntityContext(self, params):
+        return TestUdPyBlog._get_blog_entity_context(params)
 
 class TestUdPyBlog(ExpectingTestCase):
     """
@@ -368,6 +368,12 @@ class TestUdPyBlog(ExpectingTestCase):
             self._run_tests(self.tests["test_106_users_can_only_like_posts_from_authors_other_then_themselves"])
         )
 
+    def test_107_update_blog_post_and_verify_changes(self):
+        """Update blog post and verify changes"""
+        self.assertTrue(
+            self._run_tests(self.tests["test_107_update_blog_post_and_verify_changes"])
+        )
+
     def _run_tests(self, testcase):
         result = True
         desc = testcase["desc"]
@@ -394,7 +400,7 @@ class TestUdPyBlog(ExpectingTestCase):
                         if subset_selector < len(self.scenarios[group_selector]):
                             # we want the overrides to be applied at a later point. or inside the testfunc
                             scenario = copy.deepcopy(self.scenarios[group_selector][subset_selector])
-                            if "id" not in scenario or "*" in scenario_filter["overrides"] or scenario["id"] in scenario_filter["overrides"]:
+                            if "scope" not in scenario or "*" in scenario_filter["overrides"] or scenario["scope"] in scenario_filter["overrides"]:
                                 scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
 
                             scenarios_selected.append(scenario)
@@ -406,7 +412,7 @@ class TestUdPyBlog(ExpectingTestCase):
                         if abs(subset_selector) < len(self.scenarios[group_selector]):
                             for scenario_ref in range(self.scenarios[group_selector][(subset_selector):]):
                                 scenario = copy.deepcopy(scenario_ref)
-                                if "id" not in scenario or "*" in scenario_filter["overrides"] or scenario["id"] in scenario_filter["overrides"]:
+                                if "scope" not in scenario or "*" in scenario_filter["overrides"] or scenario["scope"] in scenario_filter["overrides"]:
                                     scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
 
                                 scenarios_selected.append(scenario)
@@ -418,7 +424,7 @@ class TestUdPyBlog(ExpectingTestCase):
                     if subset_selector[1:] < len(self.scenarios[group_selector]):
                         for scenario_ref in range(self.scenarios[group_selector][(subset_selector):]):
                             scenario = copy.deepcopy(scenario_ref)
-                            if "id" not in scenario or "*" in scenario_filter["overrides"] or scenario["id"] in scenario_filter["overrides"]:
+                            if "scope" not in scenario or "*" in scenario_filter["overrides"] or scenario["scope"] in scenario_filter["overrides"]:
                                 scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
 
                             scenarios_selected.append(scenario)
@@ -427,9 +433,9 @@ class TestUdPyBlog(ExpectingTestCase):
 
                 else:
                     for i in range(len(self.scenarios[group_selector])):
-                        if subset_selector == "*" or self.scenarios[group_selector][i]["id"] == subset_selector:
+                        if subset_selector == "*" or self.scenarios[group_selector][i]["scope"] == subset_selector:
                             scenario = copy.deepcopy(self.scenarios[group_selector][i])
-                            if "*" in scenario_filter["overrides"] or ("id" in scenario and scenario["id"] in scenario_filter["overrides"]):
+                            if "*" in scenario_filter["overrides"] or ("scope" in scenario and scenario["scope"] in scenario_filter["overrides"]):
                                 scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
 
                             scenarios_selected.append(scenario)
@@ -479,8 +485,11 @@ class TestUdPyBlog(ExpectingTestCase):
 
                     context = json.loads(dict(response.headers)["Blog-Entity-Context"], object_pairs_hook=deunicodify_hook)
                     logging.info("Blog-Entity-Context HEADER FOUND " + str(context))
-                    if "id" in scenario:
-                        TestUdPyBlog._add_blog_entity_context(scenario["id"],context)
+                    if "scope" in scenario:
+                        TestUdPyBlog._add_blog_entity_context(scenario["scope"], context)
+
+                    logging.info(TestUdPyBlog.blog_entity_context)
+
 
 #                if "code" in scenario["request"]:
 #                    if response.status_code != scenario["request"]["code"]:
@@ -529,7 +538,6 @@ class TestUdPyBlog(ExpectingTestCase):
         Interpolate data with current test context
         """
 
-
         logging.info("<<<<<<<<<<<<<<<<<<<<<<< BLOG CONTEXT ")
         logging.info(TestUdPyBlog.blog_entity_context)
 
@@ -537,71 +545,116 @@ class TestUdPyBlog(ExpectingTestCase):
         if not scenario["overrides"]:
             logging.info("!!!!!!!!!!!!!!!!!!!!!!! EMPTY OVERRRIDE <<" + scenario["subject"] + ">>?!?!?!? ")
 
-
         logging.info(scenario["overrides"])
-        for id in scenario["overrides"]:
-            logging.info("CHECKIG ID " + id)
-            if id == "*" or id in scenario["overrides"]:
-                override = scenario["overrides"][id]
+        for scope in scenario["overrides"]:
+            logging.info("CHECKIG SCOPE " + scope)
+            if scope == "*" or scope in scenario["overrides"]:
+                overrides = scenario["overrides"][scope]
                 args = {}
-                for replace_field in override["replace"]:
-                    args[replace_field] = ""
-                    for replacer in override["replace"][replace_field]:
-                        if "tool" in replacer:
-                            func = getattr(self.tools,replacer["tool"])
-                            if func:
-                                params = None
-                                if "tool_args" in replacer:
-                                    params = replacer["tool_args"]
-                                    args[replacer["field"]] = func(**params)
-                                else:
-                                    args[replacer["field"]] = func()
+                for override in overrides:
+                    for replace_field in override["replace"]:
+                        args[replace_field] = ""
+                        for replacer in override["replace"][replace_field]:
+                            if "tool" in replacer:
+                                func = getattr(self.tools,replacer["tool"])
+                                if func:
+                                    params = None
+                                    if "tool_args" in replacer:
+                                        params = replacer["tool_args"]
+                                        args[replacer["field"]] = func(params)
+                                    else:
+                                        args[replacer["field"]] = func()
 
+                                logging.info("!!!!!!!!!!!!!!AAAAAAAAAAAEG")
+                                logging.info(args)
 
-                            logging.info("!!!!!!!!!!!!!!AAAAAAAAAAAEG")
-                            logging.info(args)
+                        scenario_cursor = scenario_overridden
+                        logging.info("######### LOOOOOOOOOOOOOOOOOOOOOOOOOOP AAEG -- FIED {}".format(replace_field))
+                        logging.info(scenario_overridden)
+                        context_scope = "_root"
+                        if override["target"]:
+                            context_scope = override["target"][0]
+                            path = override["target"][:]
+                            while path:
+                                fragment = path.pop(0)
+                                if fragment not in scenario_cursor:
+                                    logging.info("BAD FRAGMENT DETECTED: " + fragment)
+                                    logging.info(scenario_cursor)
+                                scenario_cursor = scenario_cursor[fragment]
+                                logging.info("######### LOOOOOOOOOOOOOOOOOOOOOOOOOOP sub")
+                                logging.info(scenario_cursor)
 
-                    scenario_cursor = scenario_overridden
-                    path = override["target"][:]
-                    while path:
-                        fragment = path.pop(0)
-                        scenario_cursor = scenario_cursor[fragment]
+                        if isinstance(scenario_cursor[override["field"]], list):
+                            context = {
+                                "key": "out",
+                                "scope": context_scope,
+                                replace_field: override["template"].format(**args)
+                            }
+                            TestUdPyBlog._add_blog_entity_context(scope, context)
+                            scenario_cursor[override["field"]].append(context[replace_field])
+                            logging.info("---------adding {} to {} [ARGS BELO]".format(context[replace_field],scenario_cursor[override["field"]] ) )
+                            logging.info(args )
 
-                    scenario_cursor[override["field"]] = override["template"].format(**args)
-                    logging.info("overriding " + override["template"] + " with " + scenario_cursor[override["field"]] )
+                        else:
+                            context = {
+                                "key": "out",
+                                "scope": context_scope,
+                                replace_field: override["template"].format(**args)
+                            }
+                            TestUdPyBlog._add_blog_entity_context(scope, context)
+                            scenario_cursor[override["field"]] = context[replace_field]
+                            logging.info("overriding " + override["template"] + " with " + scenario_cursor[override["field"]] )
+
 
         return scenario_overridden
 
     @classmethod
-    def _get_blog_entity_context(cls, **params):
+    def _get_blog_entity_context(cls, context):
         """
         Retrieves the context information retrieved from the header
         for use in other methods. Usually only the most recent value
         is needed.
         """
-        if params["id"] in cls.blog_entity_context:
-            if params["field"] in cls.blog_entity_context[params["id"]]:
-                return cls.blog_entity_context[params["id"]][params["field"]][-1]
+
+        key = "in"
+        if "key" in context:
+            key = context["key"]
+
+        logging.info(">>>>>>>>>>>>>>ssss>>>>>>>>>>>>>>>>" )
+        logging.info(context )
+        if key in cls.blog_entity_context:
+            if context["scope"] in cls.blog_entity_context[key]:
+                if context["field"] in cls.blog_entity_context[key][context["scope"]]:
+                    return cls.blog_entity_context[key][context["scope"]][context["field"]][-1]
 
         return ""
 
     @classmethod
-    def _add_blog_entity_context(cls, id, context):
+    def _add_blog_entity_context(cls, scope, context):
         """
         Stores the context information retrieved from the header in an array
         for use in other methods
         """
 
-        if not id in TestUdPyBlog.blog_entity_context:
-            TestUdPyBlog.blog_entity_context[id] = {}
+        key = "in"
+        if "key" in context:
+            key = context["key"]
+
+        if not key in TestUdPyBlog.blog_entity_context:
+            TestUdPyBlog.blog_entity_context[key] = {}
+
+        if not scope in TestUdPyBlog.blog_entity_context[key]:
+            TestUdPyBlog.blog_entity_context[key][scope] = {}
 
         for field in context:
+            if field == "key":
+                continue
+
             logging.info("adding json field: " + field)
-            if not field in TestUdPyBlog.blog_entity_context[id]:
-                TestUdPyBlog.blog_entity_context[id][field] = []
+            if not field in TestUdPyBlog.blog_entity_context[key][scope]:
+                TestUdPyBlog.blog_entity_context[key][scope][field] = []
 
-            TestUdPyBlog.blog_entity_context[id][field].append(context[field])
-
+            TestUdPyBlog.blog_entity_context[key][scope][field].append(context[field])
 
     def _prepare_data(self, context):
         if "submit" in context:

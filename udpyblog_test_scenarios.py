@@ -3,7 +3,7 @@ scenarios = {
     # Scenarios with requests leading up to a successful user registration
     'post-signup-out-success': [
         {
-            'id': 'signup',
+            'scope': 'signup',
             'subject': 'Signup works',
             'request': {
                 'method': 'post',
@@ -37,7 +37,7 @@ scenarios = {
     # Scenarios with successful logins
     'post-login-out-success': [
         {
-            'id': 'login',
+            'scope': 'login',
             'subject': 'Login with <<{username}>> works',
             'request': {
                 'method': 'post',
@@ -123,6 +123,7 @@ scenarios = {
     # Scenarios testing the update post form
     'get-post-update-in-success': [
         {
+            'scope': 'get-post-update',
             'subject': 'Post update form is accessible and is fully featured',
             'request': {
                 'method': 'get',
@@ -146,17 +147,18 @@ scenarios = {
     'get-post-view-in-success': [
         {
             'subject': 'Viewing posts signed in working',
-            'id': 'post-view',
+            'scope': 'post-view',
             'request': {
                 'method': 'get',
-                'url': '/post/'
+                'url': None
             },
             'reset': False, # reset cookies before execution
             'assertions': {
                 'in': [
                     ' data-blog-control="get-logout"',
                     ' data-blog-control="get-post-create"'
-                ]
+                ],
+                're': []
             },
             'overrides': {}
         }
@@ -199,7 +201,7 @@ scenarios = {
     'post-post-create-in-success': [
         {
             'subject': 'Blog post creation: Paste a perfectly ok blog post, but add nasty things to it to validate escaping',
-            'id': 'newpost',
+            'scope': 'newpost',
             'request': {
                 'method': 'post',
                 'url': '/newpost'
@@ -234,7 +236,7 @@ scenarios = {
     'post-post-like-in-failure': [
         {
             'subject': 'Liking an own blog post',
-            'id': 'like',
+            'scope': 'like',
             'request': {
                 'method': 'post',
                 'url': '/post',
@@ -254,7 +256,7 @@ scenarios = {
     'post-post-like-in-success': [
         {
             'subject': 'Liking a blog post from another owner',
-            'id': 'like',
+            'scope': 'like',
             'request': {
                 'method': 'post',
                 'url': '/post'
@@ -270,7 +272,7 @@ scenarios = {
         },
         {
             'subject': 'UnLiking a blog post from another owner',
-            'id': 'unlike',
+            'scope': 'unlike',
             'request': {
                 'method': 'post',
                 'url': None
@@ -356,7 +358,7 @@ scenarios = {
     # Scenarios testing bad input in signup request
     'post-signup-out-failure': [
         {
-            'id': 'signup-twice',
+            'scope': 'signup-twice',
             'subject': 'Username exists',
             'request': {
                 'method': 'post',
@@ -525,19 +527,21 @@ tests = {
                 "filter": {
                     "selected": "*",
                     "overrides": {
-                        "signup": {
-                            "field": "username",
-                            "template": "t_{timestamp}",
-                            "replace": {
-                                "username": [
-                                    {
-                                        "tool": "makeTimestamp",
-                                        "field": "timestamp"
-                                    }
-                                ]
-                            },
-                            "target": [ "data" ]
-                        }
+                        "signup": [
+                            {
+                                "field": "username",
+                                "template": "t_{timestamp}",
+                                "replace": {
+                                    "username": [
+                                        {
+                                            "tool": "makeTimestamp",
+                                            "field": "timestamp"
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            }
+                        ]
                     }
                 }
             }
@@ -551,23 +555,25 @@ tests = {
                 "filter": {
                     "selected": "*",
                     "overrides": {
-                        "signup-twice": {
-                            "field": "username",
-                            "template": "{username}",
-                            "replace": {
-                                "username": [
-                                     {
-                                        "tool": "getBlogEntityContext",
-                                        "tool_args": {
-                                            "id": "signup",
+                        "signup-twice": [
+                            {
+                                "field": "username",
+                                "template": "{username}",
+                                "replace": {
+                                    "username": [
+                                         {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "signup",
+                                                "field": "username"
+                                            },
                                             "field": "username"
-                                        },
-                                        "field": "username"
-                                    }
-                                ]
-                            },
-                            "target": [ "data" ]
-                        }
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            }
+                        ]
                     }
                 }
             }
@@ -589,23 +595,25 @@ tests = {
                 "filter": {
                     "selected": "*",
                     "overrides": {
-                        "login": {
-                            "field": "username",
-                            "template": "{username}",
-                            "replace": {
-                                "username": [
-                                    {
-                                        "tool": "getBlogEntityContext",
-                                        "tool_args": {
-                                            "id": "signup",
+                        "login": [
+                            {
+                                "field": "username",
+                                "template": "{username}",
+                                "replace": {
+                                    "username": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "signup",
+                                                "field": "username"
+                                            },
                                             "field": "username"
-                                        },
-                                        "field": "username"
-                                    }
-                                ]
-                            },
-                            "target": [ "data" ]
-                        }
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            }
+                        ]
                     }
                 }
             }
@@ -619,23 +627,25 @@ tests = {
                 "filter": {
                     "selected": "*",
                     "overrides": {
-                        "login": {
-                            "field": "username",
-                            "template": "{username}",
-                            "replace": {
-                                "username": [
-                                    {
-                                        "tool": "getBlogEntityContext",
-                                        "tool_args": {
-                                            "id": "signup",
+                        "login": [
+                            {
+                                "field": "username",
+                                "template": "{username}",
+                                "replace": {
+                                    "username": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "signup",
+                                                "field": "username"
+                                            },
                                             "field": "username"
-                                        },
-                                        "field": "username"
-                                    }
-                                ]
-                            },
-                            "target": [ "data" ]
-                        }
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            }
+                        ]
                     }
                 }
             },
@@ -652,26 +662,28 @@ tests = {
                 "filter": {
                     "selected": "*",
                     "overrides": {
-                        "signup": {
-                            "field": "username",
-                            "template": "t_{timestamp}{suffix}",
-                            "replace": {
-                                "username": [
-                                    {
-                                        "tool": "makeTimestamp",
-                                        "field": "timestamp"
-                                    },
-                                    {
-                                        "tool": "makeString",
-                                        "tool_args": {
-                                            "length": 4
+                        "signup": [
+                            {
+                                "field": "username",
+                                "template": "t_{timestamp}{suffix}",
+                                "replace": {
+                                    "username": [
+                                        {
+                                            "tool": "makeTimestamp",
+                                            "field": "timestamp"
                                         },
-                                        "field": "suffix"
-                                    }
-                                ]
-                            },
-                            "target": [ "data" ]
-                        }
+                                        {
+                                            "tool": "makeString",
+                                            "tool_args": {
+                                                "length": 4
+                                            },
+                                            "field": "suffix"
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            }
+                        ]
                     }
                 }
             },
@@ -688,23 +700,25 @@ tests = {
                 "filter": {
                     "selected": "*",
                     "overrides": {
-                        "login": {
-                            "field": "username",
-                            "template": "{username}",
-                            "replace": {
-                                "username": [
-                                    {
-                                        "tool": "getBlogEntityContext",
-                                        "tool_args": {
-                                            "id": "signup",
+                        "login": [
+                            {
+                                "field": "username",
+                                "template": "{username}",
+                                "replace": {
+                                    "username": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "signup",
+                                                "field": "username"
+                                            },
                                             "field": "username"
-                                        },
-                                        "field": "username"
-                                    }
-                                ]
-                            },
-                            "target": [ "data" ]
-                        }
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            }
+                        ]
                     }
                 }
             },
@@ -721,23 +735,25 @@ tests = {
                 "filter": {
                     "selected": "*",
                     "overrides": {
-                        "login": {
-                            "field": "username",
-                            "template": "{username}",
-                            "replace": {
-                                "username": [
-                                    {
-                                        "tool": "getBlogEntityContext",
-                                        "tool_args": {
-                                            "id": "signup",
+                        "login": [
+                            {
+                                "field": "username",
+                                "template": "{username}",
+                                "replace": {
+                                    "username": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "signup",
+                                                "field": "username"
+                                            },
                                             "field": "username"
-                                        },
-                                        "field": "username"
-                                    }
-                                ]
-                            },
-                            "target": [ "data" ]
-                        }
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            }
+                        ]
                     }
                 }
             },
@@ -754,23 +770,25 @@ tests = {
                 "filter": {
                     "selected": "*",
                     "overrides": {
-                        "login": {
-                            "field": "username",
-                            "template": "{username}",
-                            "replace": {
-                                "username": [
-                                    {
-                                        "tool": "getBlogEntityContext",
-                                        "tool_args": {
-                                            "id": "signup",
+                        "login": [
+                            {
+                                "field": "username",
+                                "template": "{username}",
+                                "replace": {
+                                    "username": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "signup",
+                                                "field": "username"
+                                            },
                                             "field": "username"
-                                        },
-                                        "field": "username"
-                                    }
-                                ]
-                            },
-                            "target": [ "data" ]
-                        }
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            }
+                        ]
                     }
                 }
             },
@@ -787,26 +805,28 @@ tests = {
                 "filter": {
                     "selected": "*",
                     "overrides": {
-                        "signup": {
-                            "field": "username",
-                            "template": "t_{timestamp}_{suffix}",
-                            "replace": {
-                                "username": [
-                                    {
-                                        "tool": "makeTimestamp",
-                                        "field": "timestamp"
-                                    },
-                                    {
-                                        "tool": "makeString",
-                                        "tool_args": {
-                                            "length": 4
+                        "signup": [
+                            {
+                                "field": "username",
+                                "template": "t_{timestamp}_{suffix}",
+                                "replace": {
+                                    "username": [
+                                        {
+                                            "tool": "makeTimestamp",
+                                            "field": "timestamp"
                                         },
-                                        "field": "suffix"
-                                    }
-                                ]
-                            },
-                            "target": [ "data" ]
-                        }
+                                        {
+                                            "tool": "makeString",
+                                            "tool_args": {
+                                                "length": 4
+                                            },
+                                            "field": "suffix"
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            }
+                        ]
                     }
                 }
             },
@@ -815,23 +835,25 @@ tests = {
                 "filter": {
                     "selected": "*",
                     "overrides": {
-                        "post-view": {
-                            "field": "url",
-                            "template": "/post/{post_id}",
-                            "replace": {
-                                "url": [
-                                    {
-                                        "tool": "getBlogEntityContext",
-                                        "tool_args": {
-                                            "id": "newpost",
+                        "post-view": [
+                            {
+                                "field": "url",
+                                "template": "/post/{post_id}",
+                                "replace": {
+                                    "url": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "newpost",
+                                                "field": "post_id"
+                                            },
                                             "field": "post_id"
-                                        },
-                                        "field": "post_id"
-                                    }
-                                ]
+                                        }
+                                    ]
+                                },
+                                "target": [ "request" ]
                             },
-                            "target": [ "request" ]
-                        }
+                        ]
                     }
                 }
             },
@@ -840,23 +862,25 @@ tests = {
                 "filter": {
                     "selected": "like",
                     "overrides": {
-                        "like": {
-                            "field": "url",
-                            "template": "/post/{post_id}/like",
-                            "replace": {
-                                "url": [
-                                    {
-                                        "tool": "getBlogEntityContext",
-                                        "tool_args": {
-                                            "id": "newpost",
+                        "like": [
+                            {
+                                "field": "url",
+                                "template": "/post/{post_id}/like",
+                                "replace": {
+                                    "url": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "newpost",
+                                                "field": "post_id"
+                                            },
                                             "field": "post_id"
-                                        },
-                                        "field": "post_id"
-                                    }
-                                ]
-                            },
-                            "target": [ "request" ]
-                        }
+                                        }
+                                    ]
+                                },
+                                "target": [ "request" ]
+                            }
+                        ]
                     }
                 }
             },
@@ -865,23 +889,25 @@ tests = {
                 "filter": {
                     "selected": "unlike",
                     "overrides": {
-                        "unlike": {
-                            "field": "url",
-                            "template": "/post/{post_id}/like",
-                            "replace": {
-                                "url": [
-                                    {
-                                        "tool": "getBlogEntityContext",
-                                        "tool_args": {
-                                            "id": "newpost",
+                        "unlike": [
+                            {
+                                "field": "url",
+                                "template": "/post/{post_id}/like",
+                                "replace": {
+                                    "url": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "newpost",
+                                                "field": "post_id"
+                                            },
                                             "field": "post_id"
-                                        },
-                                        "field": "post_id"
-                                    }
-                                ]
-                            },
-                            "target": [ "request" ]
-                        }
+                                        }
+                                    ]
+                                },
+                                "target": [ "request" ]
+                            }
+                        ]
                     }
                 }
             },
@@ -893,23 +919,313 @@ tests = {
                 "filter": {
                     "selected": "like",
                     "overrides": {
-                        "like": {
-                            "field": "url",
-                            "template": "/post/{post_id}/like",
-                            "replace": {
-                                "url": [
-                                    {
-                                        "tool": "getBlogEntityContext",
-                                        "tool_args": {
-                                            "id": "newpost",
+                        "like": [
+                            {
+                                "field": "url",
+                                "template": "/post/{post_id}/like",
+                                "replace": {
+                                    "url": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "newpost",
+                                                "field": "post_id"
+                                            },
                                             "field": "post_id"
-                                        },
-                                        "field": "post_id"
-                                    }
-                                ]
+                                        }
+                                    ]
+                                },
+                                "target": [ "request" ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    'test_107_update_blog_post_and_verify_changes': {
+        'desc': "Update blog post and verify changes",
+        'scenarios': [
+            {
+                "group": "post-login-out-success",
+                "filter": {
+                    "selected": "*",
+                    "overrides": {
+                        "login": [
+                            {
+                                "field": "username",
+                                "template": "{username}",
+                                "replace": {
+                                    "username": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "signup",
+                                                "field": "username"
+                                            },
+                                            "field": "username"
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "group": "post-post-create-in-success",
+                "filter": {
+                    "selected": "*",
+                    "overrides": {
+                        "newpost": [
+                            {
+                                "field": "subject",
+                                "template": "TestPost: {subject}",
+                                "replace": {
+                                    "subject": [
+                                        {
+                                            "tool": "makeString",
+                                            "tool_args": {
+                                                "length": 20
+                                            },
+                                            "field": "subject"
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
                             },
-                            "target": [ "request" ]
-                        }
+                            {
+                                "field": "summary",
+                                "template": "TestSummary: {summary}",
+                                "replace": {
+                                    "summary": [
+                                        {
+                                            "tool": "makeString",
+                                            "tool_args": {
+                                                "length": 50
+                                            },
+                                            "field": "summary"
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            },
+                            {
+                                "field": "content",
+                                "template": "TestContent: {content}",
+                                "replace": {
+                                    "content": [
+                                        {
+                                            "tool": "makeString",
+                                            "tool_args": {
+                                                "length": 50
+                                            },
+                                            "field": "content"
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "group": "get-post-view-in-success",
+                "filter": {
+                    "selected": "*",
+                    "overrides": {
+                        "post-view": [
+                            {
+                                "field": "url",
+                                "template": "/post/{post_id}",
+                                "replace": {
+                                    "url": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "newpost",
+                                                "field": "post_id"
+                                            },
+                                            "field": "post_id"
+                                        }
+                                    ]
+                                },
+                                "target": [ "request" ]
+                            },
+                            {
+                                "field": "subject",
+                                "template": 'View details of just created blog post with subject <<{test_subject}>>',
+                                "replace": {
+                                    "test_subject": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "newpost",
+                                                "field": "subject"
+                                            },
+                                            "field": "subject"
+                                        }
+                                    ]
+                                },
+                                "target": [ ]
+                            },
+                            {
+                                "field": "re",
+                                "template": ' data-blog-content-element="subject"[^>]*>\s*{subject}\s*<',
+                                "replace": {
+                                    "subject": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "newpost",
+                                                "field": "subject"
+                                            },
+                                            "field": "subject"
+                                        }
+                                    ]
+                                },
+                                "target": [ "assertions" ]
+                            },
+                            {
+                                "field": "re",
+                                "template": ' data-blog-content-element="summary"[^>]*>\s*{summary}\s*<',
+                                "replace": {
+                                    "summary": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "newpost",
+                                                "field": "summary"
+                                            },
+                                            "field": "summary"
+                                        }
+                                    ]
+                                },
+                                "target": [ "assertions" ]
+                            },
+                            {
+                                "field": "re",
+                                "template": ' data-blog-content-element="content"[^>]*>\s*{content}\s*<',
+                                "replace": {
+                                    "content": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "newpost",
+                                                "field": "content"
+                                            },
+                                            "field": "content"
+                                        }
+                                    ]
+                                },
+                                "target": [ "assertions" ]
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                "group": "get-post-update-in-success",
+                "filter": {
+                    "selected": "*",
+                    "overrides": {
+                        "get-post-update": [
+                            {
+                                "field": "url",
+                                "template": "/post/{post_id}/update",
+                                "replace": {
+                                    "url": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "newpost",
+                                                "field": "post_id"
+                                            },
+                                            "field": "post_id"
+                                        }
+                                    ]
+                                },
+                                "target": [ "request" ]
+                            },
+                            {
+                                "field": "subject",
+                                "template": 'View details of just created blog post with subject <<{test_subject}>>',
+                                "replace": {
+                                    "test_subject": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "newpost",
+                                                "field": "subject"
+                                            },
+                                            "field": "subject"
+                                        }
+                                    ]
+                                },
+                                "target": [ ]
+                            },
+                            {
+                                "field": "re",
+                                "template": r'<input(?!name="subject").+name="subject"(?!value=").+value="{subject}"',
+                                "replace": {
+                                    "subject": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "newpost",
+                                                "field": "subject"
+                                            },
+                                            "field": "subject"
+                                        }
+                                    ]
+                                },
+                                "target": [ "assertions" ]
+                            },
+                            {
+                                "field": "re",
+                                "template": r'<textarea(?!name="summary").+name="summary"[^>]*>{summary}<\/textarea>',
+                                "replace": {
+                                    "summary": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "newpost",
+                                                "field": "summary"
+                                            },
+                                            "field": "summary"
+                                        }
+                                    ]
+                                },
+                                "target": [ "assertions" ]
+                            },
+                            {
+                                "field": "re",
+                                "template": r'<textarea(?!name="content").+name="content"[^>]*>{content}<\/textarea>',
+                                "replace": {
+                                    "content": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "key": "out",
+                                                "scope": "newpost",
+                                                "field": "content"
+                                            },
+                                            "field": "content"
+                                        }
+                                    ]
+                                },
+                                "target": [ "assertions" ]
+                            }
+                        ]
                     }
                 }
             }

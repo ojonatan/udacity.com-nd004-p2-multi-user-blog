@@ -9,10 +9,13 @@
 	{% else %}
 	<div class="cover-image"></div>
 	{% endif %}
-    <h2>{{post.subject}}</h2>
+    <h2 data-blog-content-element="subject">{{post.subject}}</h2>
+
+	<small data-blog-content-element="summary">{{post.summary}}</small>
+
     <hr />
 <!--post-start-->
-    <div style="clear: both;">{{post.content}}</div>
+    <div style="clear: both;" data-blog-content-element="content">{{post.content}}</div>
 <!--post-end-->
     <div>{{post.user.username}}</div>
 	<hr>
