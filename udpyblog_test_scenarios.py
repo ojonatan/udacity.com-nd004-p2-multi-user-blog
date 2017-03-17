@@ -120,6 +120,29 @@ scenarios = {
             'overrides': {}
         }
     ],
+    # Scenarios testing the update post form
+    'get-post-update-in-success': [
+        {
+            'subject': 'Post update form is accessible and is fully featured',
+            'request': {
+                'method': 'get',
+                'url': None
+            },
+            'reset': False, # reset cookies before execution
+            'assertions': {
+                'in': [
+                    ' data-blog-control="get-logout"',
+                    ' data-blog-form="post-post-update"'
+                ],
+                're': [
+                    r'<input(?!name="subject").+name="subject"(?!value=").+value="([^"]+)"',
+                    r'<textarea(?!name="summary").+name="summary"[^>]*>((?!<\/textarea>).+)<\/textarea>',
+                    r'<textarea(?!name="content").+name="content"[^>]*>((?!<\/textarea>).+)<\/textarea>'
+                ]
+            },
+            'overrides': {}
+        }
+    ],
     'get-post-view-in-success': [
         {
             'subject': 'Viewing posts signed in working',
@@ -508,8 +531,7 @@ tests = {
                             "replace": {
                                 "username": [
                                     {
-                                        "source": "callback",
-                                        "source_args": [ "make_timestamp" ],
+                                        "tool": "makeTimestamp",
                                         "field": "timestamp"
                                     }
                                 ]
@@ -535,8 +557,8 @@ tests = {
                             "replace": {
                                 "username": [
                                      {
-                                        "source": "blog-entity-context",
-                                        "source_args": {
+                                        "tool": "getBlogEntityContext",
+                                        "tool_args": {
                                             "id": "signup",
                                             "field": "username"
                                         },
@@ -573,8 +595,8 @@ tests = {
                             "replace": {
                                 "username": [
                                     {
-                                        "source": "blog-entity-context",
-                                        "source_args": {
+                                        "tool": "getBlogEntityContext",
+                                        "tool_args": {
                                             "id": "signup",
                                             "field": "username"
                                         },
@@ -603,8 +625,8 @@ tests = {
                             "replace": {
                                 "username": [
                                     {
-                                        "source": "blog-entity-context",
-                                        "source_args": {
+                                        "tool": "getBlogEntityContext",
+                                        "tool_args": {
                                             "id": "signup",
                                             "field": "username"
                                         },
@@ -636,13 +658,14 @@ tests = {
                             "replace": {
                                 "username": [
                                     {
-                                        "source": "callback",
-                                        "source_args": [ "make_timestamp" ],
+                                        "tool": "makeTimestamp",
                                         "field": "timestamp"
                                     },
                                     {
-                                        "source": "callback",
-                                        "source_args": [ "make_string", 4 ],
+                                        "tool": "makeString",
+                                        "tool_args": {
+                                            "length": 4
+                                        },
                                         "field": "suffix"
                                     }
                                 ]
@@ -671,8 +694,8 @@ tests = {
                             "replace": {
                                 "username": [
                                     {
-                                        "source": "blog-entity-context",
-                                        "source_args": {
+                                        "tool": "getBlogEntityContext",
+                                        "tool_args": {
                                             "id": "signup",
                                             "field": "username"
                                         },
@@ -704,8 +727,8 @@ tests = {
                             "replace": {
                                 "username": [
                                     {
-                                        "source": "blog-entity-context",
-                                        "source_args": {
+                                        "tool": "getBlogEntityContext",
+                                        "tool_args": {
                                             "id": "signup",
                                             "field": "username"
                                         },
@@ -737,8 +760,8 @@ tests = {
                             "replace": {
                                 "username": [
                                     {
-                                        "source": "blog-entity-context",
-                                        "source_args": {
+                                        "tool": "getBlogEntityContext",
+                                        "tool_args": {
                                             "id": "signup",
                                             "field": "username"
                                         },
@@ -770,13 +793,14 @@ tests = {
                             "replace": {
                                 "username": [
                                     {
-                                        "source": "callback",
-                                        "source_args": [ "make_timestamp" ],
+                                        "tool": "makeTimestamp",
                                         "field": "timestamp"
                                     },
                                     {
-                                        "source": "callback",
-                                        "source_args": [ "make_string", 4 ],
+                                        "tool": "makeString",
+                                        "tool_args": {
+                                            "length": 4
+                                        },
                                         "field": "suffix"
                                     }
                                 ]
@@ -797,8 +821,8 @@ tests = {
                             "replace": {
                                 "url": [
                                     {
-                                        "source": "blog-entity-context",
-                                        "source_args": {
+                                        "tool": "getBlogEntityContext",
+                                        "tool_args": {
                                             "id": "newpost",
                                             "field": "post_id"
                                         },
@@ -822,8 +846,8 @@ tests = {
                             "replace": {
                                 "url": [
                                     {
-                                        "source": "blog-entity-context",
-                                        "source_args": {
+                                        "tool": "getBlogEntityContext",
+                                        "tool_args": {
                                             "id": "newpost",
                                             "field": "post_id"
                                         },
@@ -847,8 +871,8 @@ tests = {
                             "replace": {
                                 "url": [
                                     {
-                                        "source": "blog-entity-context",
-                                        "source_args": {
+                                        "tool": "getBlogEntityContext",
+                                        "tool_args": {
                                             "id": "newpost",
                                             "field": "post_id"
                                         },
@@ -875,8 +899,8 @@ tests = {
                             "replace": {
                                 "url": [
                                     {
-                                        "source": "blog-entity-context",
-                                        "source_args": {
+                                        "tool": "getBlogEntityContext",
+                                        "tool_args": {
                                             "id": "newpost",
                                             "field": "post_id"
                                         },

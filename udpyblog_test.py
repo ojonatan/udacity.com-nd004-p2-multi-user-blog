@@ -17,11 +17,6 @@ import json
 import copy
 
 # Helper functions
-def make_string(length):
-    return "".join( random.choice(string.letters + string.digits) for x in xrange(length) )
-
-def make_timestamp():
-    return int(time.time())
 
 def merge_copy_dict(d1, d2):
     result = copy.deepcopy(d1)
@@ -230,6 +225,16 @@ Body:
         )
         dump_file.close()
 
+class TestUdPyBlogTools():
+    def makeString(self,  **params):
+        return "".join( random.choice(string.letters + string.digits) for x in xrange(params["length"]) )
+
+    def makeTimestamp(self):
+        return str(int(time.time()))
+
+    def getBlogEntityContext(self, **params):
+        return TestUdPyBlog._get_blog_entity_context(**params)
+
 class TestUdPyBlog(ExpectingTestCase):
     """
     Testing the UdPyBlog module. Multiple tests can be configured
@@ -278,9 +283,9 @@ class TestUdPyBlog(ExpectingTestCase):
             ),
             use_sqlite=True
         )
+        self.tools = TestUdPyBlogTools()
         self.testbed.init_memcache_stub()
         self.prefix = 'tests-' + str(time.time()) + '-'
-        self.test_user = make_string(6)
         for test_func in self.scenarios:
             for test_case in self.scenarios[test_func]:
                 if "data" in test_case:
@@ -392,7 +397,6 @@ class TestUdPyBlog(ExpectingTestCase):
                             if "id" not in scenario or "*" in scenario_filter["overrides"] or scenario["id"] in scenario_filter["overrides"]:
                                 scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
 
-                            scenario["tag"] = "i-{}-{}".format(time.time(),make_string(4))
                             scenarios_selected.append(scenario)
                         else:
                             logging.info("Subset selector '{}' out of range. Group cotains only {} scenarios".format(subset_selector,len(self.scenarios[group_selector])))
@@ -405,7 +409,6 @@ class TestUdPyBlog(ExpectingTestCase):
                                 if "id" not in scenario or "*" in scenario_filter["overrides"] or scenario["id"] in scenario_filter["overrides"]:
                                     scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
 
-                                scenario["tag"] = "last-{}-{}".format(time.time(),make_string(4))
                                 scenarios_selected.append(scenario)
 
                         logging.info("Subset selector '{}' out of range. Group cotains only {} scenarios".format(subset_selector,len(self.scenarios[group_selector])))
@@ -418,7 +421,6 @@ class TestUdPyBlog(ExpectingTestCase):
                             if "id" not in scenario or "*" in scenario_filter["overrides"] or scenario["id"] in scenario_filter["overrides"]:
                                 scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
 
-                            scenario["tag"] = "first-{}-{}".format(time.time(),make_string(4))
                             scenarios_selected.append(scenario)
 
                     logging.info("Subset selector '{}' out of range. Group cotains only {} scenarios".format(subset_selector[1:],len(self.scenarios[group_selector])))
@@ -443,7 +445,7 @@ class TestUdPyBlog(ExpectingTestCase):
 
         logging.info("Running {} subtests".format(len(scenarios_selected)))
         for scenario in scenarios_selected:
-            TestUdPyBlog._scenario_override(scenario)
+            self._scenario_override(scenario)
             logging.info(scenario)
             if scenario["reset"] == True:
                 logging.info("clearing cookies")
@@ -522,8 +524,7 @@ class TestUdPyBlog(ExpectingTestCase):
 
         return result
 
-    @classmethod
-    def _scenario_override(cls, scenario):
+    def _scenario_override(self, scenario):
         """
         Interpolate data with current test context
         """
@@ -546,15 +547,19 @@ class TestUdPyBlog(ExpectingTestCase):
                 for replace_field in override["replace"]:
                     args[replace_field] = ""
                     for replacer in override["replace"][replace_field]:
-                        if replacer["source"] == "blog-entity-context":
-                            args[replacer["field"]] = cls._get_blog_entity_context(**replacer["source_args"])
+                        if "tool" in replacer:
+                            func = getattr(self.tools,replacer["tool"])
+                            if func:
+                                params = None
+                                if "tool_args" in replacer:
+                                    params = replacer["tool_args"]
+                                    args[replacer["field"]] = func(**params)
+                                else:
+                                    args[replacer["field"]] = func()
+
 
                             logging.info("!!!!!!!!!!!!!!AAAAAAAAAAAEG")
                             logging.info(args)
-
-                        elif replacer["source"] == "callback":
-                            func = replacer["source_args"].pop(0)
-                            args[replacer["field"]] = eval(func)(*replacer["source_args"])
 
                     scenario_cursor = scenario_overridden
                     path = override["target"][:]
