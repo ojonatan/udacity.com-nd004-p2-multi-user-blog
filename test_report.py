@@ -32,7 +32,9 @@ def read_file(uri):
         return file.read()
 
 def load_reports_from_prefix(prefix):
-    return read_file( prefix + 'reports' ).strip().split("\n")
+    reports_list = read_file( prefix + 'reports' ).strip().split("\n")
+    os.remove(prefix + 'reports')
+    return reports_list
 
 def format_report(report_files=None,prefix=None):
     output = []
@@ -45,6 +47,7 @@ def format_report(report_files=None,prefix=None):
     reports = {}
     for report_file in report_files:
         report = json.loads(read_file(report_file))
+        os.remove(report_file)
         reports[report["function"]] = report
 
     summary = generate_summary(reports)
@@ -53,6 +56,7 @@ def format_report(report_files=None,prefix=None):
         output.append(line_heading(summary[test_func]))
         output.append(line_dash(summary[test_func]))
         output.append(line_result(summary[test_func]))
+        output.append(line_dash(summary[test_func]))
         for sub_id in summary[test_func]["subs"]:
             output.append(line_result(summary[test_func]["subs"][sub_id]))
             for sub_sub_id in summary[test_func]["subs"][sub_id]["subs"]:

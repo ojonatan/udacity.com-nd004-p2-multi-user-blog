@@ -1,9 +1,10 @@
 $(document).ready(function(){
-	var placeholder_url = "___google_appengine_upload_url_autogenerate___";
+	upload_urls = []
 	$('#post-form').on(
 		'submit',
 		function(){
 			if($(this).data('ready') > 0){
+				tinymce.activeEditor.setMode('readonly');
 				return true;
 			}
 			$('.fileinput-upload').trigger('click');
@@ -13,28 +14,31 @@ $(document).ready(function(){
 	);
 
 	function refresh_upload_url(){
-		$.get(
-			$('.form-control-upload').first().data("blog-upload-url-source"),
-			function(json){
-				$('.form-control-upload').data("blog-upload-url",json.upload_url);
-			},
-			"json"
+		console.log("REFRESHING UPLOAD URL.....");
+		json = $.parseJSON(
+			$.ajax({
+				url: $('.form-control-upload').first().data("blog-upload-url-source"),
+				async: false,
+				dataType: "json"
+			}).responseText
 		);
+		var timestamp = Math.round(+new Date()/1000);
+		json.upload_url += json.upload_url.indexOf('?') > -1 ?
+			'&gae_upload_url_timestamp=' + timestamp
+			:
+			'?gae_upload_url_timestamp=' + timestamp
+
+		return json.upload_url;
 	}
 
-	(function() {
+    (function() {
 		var proxied = window.XMLHttpRequest.prototype.open;
 		window.XMLHttpRequest.prototype.open = function() {
 			try
 			{
-				if(arguments[1] == "___google_appengine_upload_url_autogenerate___"){
-					if(
-							$('.form-control-upload').length
-							&&
-							$('.form-control-upload').first().data("blog-upload-url")
-					){
-						arguments[1] = $('.form-control-upload').first().data("blog-upload-url")
-					}
+				if(arguments[1].indexOf('/_ah/upload/') > -1){
+					arguments[1] = refresh_upload_url()
+					console.log('FORCE REFRESH UPLOAD URL TO ' + arguments[1])
 				}
 			} catch(e){
 
@@ -44,8 +48,8 @@ $(document).ready(function(){
 	})();
 
 	var file_input_options = {
-		'uploadUrl': placeholder_url,
-		'minFileCount': 1,
+		'uploadUrl': $('.form-control-upload').first().data("blog-upload-url"),
+		'minFileCount': 0,
 		'maxFileCount': 1,
 		'uploadAsync': true,
 	};
@@ -60,7 +64,6 @@ $(document).ready(function(){
 	$('#post-cover').on('fileselect', function(event, data, previewId, index, jqXHR) {
 		console.log("File selected. Blocking form until upload complete.");
 		$('#post-form').data("ready","0");
-		refresh_upload_url();
 	});
 
 	$('#post-cover').on('fileuploaded', function(event, data, previewId, index, jqXHR) {
@@ -92,10 +95,9 @@ $(document).ready(function(){
 				'insertdatetime nonbreaking save table contextmenu',
 				'emoticons template paste textcolor colorpicker textpattern imagetools codesample toc'
 			],
-			images_upload_url: placeholder_url,
+			images_upload_url: $('.form-control-upload').first().data("blog-upload-url"),
 			file_picker_types: 'image',
 			file_picker_callback: function(cb, value, meta) {
-				refresh_upload_url();
 				var input = document.createElement('input');
 				input.setAttribute('type', 'file');
 				input.setAttribute('accept', 'image/*');

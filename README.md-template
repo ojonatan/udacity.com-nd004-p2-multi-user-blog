@@ -4,29 +4,22 @@ A Multi User Blog module
 
 ## Highlights
 
+This blog implementation focuses on the following aspects
 
-## Roadmap
+* Security
+* Comprehensive and adaptive Testing
+* Modularity
 
-### 0.1
+The blog features rich media content powered by jQuery Plugins. The uploaded
+Files - images - require some maintenance work per request.
 
-* Edit functionality implemented
-* Accessing forms for protected functionality require login
+## TODO
 
-### 0.2
-
-Markup for blog with homework functionality completed using
-Bootstrap
-
-### 0.x
-
-* Advanced functionality
-** Configuration panel for blog related settings
-** Tags
-** Cats
-** Calendar
-
-
-## Know limitations
+* Kill bug invalidating upload url when working with cover and content images
+* Implement cleanup strategy to remove orphaned blobs without damaging blop posts in progress
+* Add markup/ CSS to make the blog appear in shape
+* EXTRA Maybe add some testing scenarios for redirects and comments
+* EXTRA pagination!
 
 ## Live URL
 
@@ -37,6 +30,12 @@ https://udacity-160512.appspot.com/blog
 ```
 npm install
 bower install
+```
+
+## Test results
+
+```
+{test_report}
 ```
 
 ## Version

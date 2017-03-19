@@ -235,6 +235,14 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         self.response.headers.add_header("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0")
         self.response.headers.add_header("Expires","0")
 
+    def get_image_upload_url(self):
+        self.no_cache()
+        bucket = app_identity.get_default_gcs_bucket_name()
+        return blobstore.create_upload_url(
+            '/image/upload',
+            gs_bucket_name=bucket
+        )
+
     def process_images(self, content, post_key):
         return
         logging.info("checking fo r " + str(post_key));
@@ -260,13 +268,8 @@ class UdPyBlogHandler(webapp2.RequestHandler):
 class UdPyBlogImageUploadPrepareHandler(blobstore_handlers.BlobstoreUploadHandler, UdPyBlogHandler):
     def get(self):
         self.no_cache()
-        bucket = app_identity.get_default_gcs_bucket_name()
-        upload_url = blobstore.create_upload_url(
-            '/image/upload',
-            gs_bucket_name=bucket
-        )
         self.render_json({
-            "upload_url": upload_url
+            "upload_url": self.get_image_upload_url()
         })
 
 class UdPyBlogImageUploadHandler(blobstore_handlers.BlobstoreUploadHandler, UdPyBlogHandler):
@@ -362,8 +365,6 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
 
     restricted = True
     def post(self, post_id):
-        logging.info("<><><><>LIKE HANDLER CALLES<><><>")
-
         if self.request.referer:
             self.session["redirect"] = self.request.referer
 
@@ -629,6 +630,7 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                 "content": self.request.get("content"),
                 "post_id": None,
                 "update": self.update,
+                "upload_url": self.get_image_upload_url(),
                 "upload_url_source": self.url_prefixed("image/upload_url")
             }
         )
@@ -654,6 +656,7 @@ class UdPyBlogPostUpdateHandler(UdPyBlogPostHandler):
                         "post_id": post_id,
                         "update": self.update,
                         "cover_image_url": post.cover_image and self.url_prefixed("{0}{1}".format(UdPyBlog.image_view_url_part,post.cover_image.blob_key.key())),
+                        "upload_url": self.get_image_upload_url(),
                         "upload_url_source": self.url_prefixed("image/upload_url")
                     }
                 )

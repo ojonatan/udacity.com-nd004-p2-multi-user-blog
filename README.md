@@ -13,6 +13,14 @@ This blog implementation focuses on the following aspects
 The blog features rich media content powered by jQuery Plugins. The uploaded
 Files - images - require some maintenance work per request.
 
+## TODO
+
+* Kill bug invalidating upload url when working with cover and content images
+* Implement cleanup strategy to remove orphaned blobs without damaging blop posts in progress
+* Add markup/ CSS to make the blog appear in shape
+* EXTRA Maybe add some testing scenarios for redirects and comments
+* EXTRA pagination!
+
 ## Live URL
 
 https://udacity-160512.appspot.com/blog
@@ -30,6 +38,7 @@ bower install
                                                                       +/ -/ O/ #
 --------------------------------------------------------------------------------
 The create blog post form is there and ready for input                2/ 0/ 0/ 2
+--------------------------------------------------------------------------------
  .. Login with <<{username}>> works                                   1/ 0/ 0/ 1
     >  data-blog-control="get-logout"                                 OK
 
@@ -47,6 +56,7 @@ The create blog post form is there and ready for input                2/ 0/ 0/ 2
                                                                       +/ -/ O/ #
 --------------------------------------------------------------------------------
 Log in with existing user works                                       1/ 0/ 0/ 1
+--------------------------------------------------------------------------------
  .. Login with <<{username}>> works                                   1/ 0/ 0/ 1
     >  data-blog-control="get-logout"                                 OK
 
@@ -57,6 +67,7 @@ Log in with existing user works                                       1/ 0/ 0/ 1
 --------------------------------------------------------------------------------
 Create a poisoned but formal correct new blog post and                2/ 0/ 0/ 2
 verify sanitization
+--------------------------------------------------------------------------------
  .. Login with <<{username}>> works                                   1/ 0/ 0/ 1
     >  data-blog-control="get-logout"                                 OK
 
@@ -78,6 +89,7 @@ verify sanitization
                                                                       +/ -/ O/ #
 --------------------------------------------------------------------------------
 Log out right after login works                                       2/ 0/ 0/ 2
+--------------------------------------------------------------------------------
  .. Login with <<{username}>> works                                   1/ 0/ 0/ 1
     >  data-blog-control="get-logout"                                 OK
 
@@ -92,6 +104,7 @@ Log out right after login works                                       2/ 0/ 0/ 2
                                                                       +/ -/ O/ #
 --------------------------------------------------------------------------------
 Log out right after signup works                                      2/ 0/ 0/ 2
+--------------------------------------------------------------------------------
  .. Signup works                                                      2/ 0/ 0/ 2
     >  data-blog-control="get-post-create"                            OK
     >  data-blog-control="get-home"                                   OK
@@ -107,6 +120,7 @@ Log out right after signup works                                      2/ 0/ 0/ 2
 --------------------------------------------------------------------------------
 Testing, if the initial view features the logged out view of          1/ 0/ 0/ 1
 the blog
+--------------------------------------------------------------------------------
  .. Testing, if the initial view features the logged out              2/ 0/ 0/ 2
  .. view of the blog
     >  data-blog-control="get-signup"                                 OK
@@ -118,6 +132,7 @@ the blog
                                                                       +/ -/ O/ #
 --------------------------------------------------------------------------------
 Post too short input for a blog post and see 3 errors                 2/ 0/ 0/ 2
+--------------------------------------------------------------------------------
  .. Blog post fails: too short input for subject, summary             6/ 0/ 0/ 6
  .. and content
     > data-blog-error="content"[^>]*>\s*[^<\s]+                       OK
@@ -137,6 +152,7 @@ Post too short input for a blog post and see 3 errors                 2/ 0/ 0/ 2
 --------------------------------------------------------------------------------
 Users can only like/unlike posts from authors other then              6/ 0/ 0/ 6
 themselves
+--------------------------------------------------------------------------------
  .. Liking an own blog post                                           1/ 0/ 0/ 1
     >  data-blog-error                                                OK
 
@@ -172,6 +188,7 @@ themselves
                                                                       +/ -/ O/ #
 --------------------------------------------------------------------------------
 Submitting signups with bad data                                      5/ 0/ 0/ 5
+--------------------------------------------------------------------------------
  .. Bad email address                                                 4/ 0/ 0/ 4
     > data-blog-error="username"[^>]*>\s*<                            OK
     > data-blog-error="password"[^>]*>\s*<                            OK
@@ -208,6 +225,7 @@ Submitting signups with bad data                                      5/ 0/ 0/ 5
                                                                       +/ -/ O/ #
 --------------------------------------------------------------------------------
 Update blog post and verify changes                                   5/ 0/ 0/ 5
+--------------------------------------------------------------------------------
  .. Login with <<{username}>> works                                   1/ 0/ 0/ 1
     >  data-blog-control="get-logout"                                 OK
 
@@ -215,15 +233,15 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
     >  data-blog-control="get-post-update"                            OK
     >  data-blog-content-                                             OK
     > element="subject"[^>]*>\s*TestSubjectUPDATE: TestPost:
-    > x1M8wGj1f0iaZgi3LQFa\s*<
+    > yL6SPDOcl4d2ObCFc8q0\s*<
     >  data-blog-content-                                             OK
     > element="summary"[^>]*>\s*TestSummaryUPDATE:
     > TestSummary:
-    > UFam0GkCxxxO9WFyDgzlTOsJZwMit6l45SuWP5O4thlYEeZi4X\s*<
+    > 1HWFlnPZrcMBvFUMuAWH2YyOG7uTWMn9eRFXgPoPUeL5RBpUVd\s*<
     >  data-blog-content-                                             OK
     > element="content"[^>]*>\s*TestContentUPDATE:
     > TestContent:
-    > uDBvNYU6aBV1GcigIztXQp8BIM0RX8iPtHpkklUec4ZCOionee\s*<
+    > rHVxT6TWfUGWnJPeaRvow8JZ5hbzlacTppHVcdEctVabLKPQGZ\s*<
     >  data-blog-control="get-logout"                                 OK
 
  .. Blog post creation: Paste a perfectly ok blog post, but           6/ 0/ 0/ 6
@@ -240,17 +258,17 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
 
  .. Post update form is accessible and is fully featured              8/ 0/ 0/ 8
     > <textarea(?!name="content").+name="content"[^>]*>TestC          OK
-    > ontent: uDBvNYU6aBV1GcigIztXQp8BIM0RX8iPtHpkklUec4ZCOi
-    > onee<\/textarea>
+    > ontent: rHVxT6TWfUGWnJPeaRvow8JZ5hbzlacTppHVcdEctVabLK
+    > PQGZ<\/textarea>
     > <textarea(?!name="summary").+name="summary"[^>]*>TestS          OK
-    > ummary: UFam0GkCxxxO9WFyDgzlTOsJZwMit6l45SuWP5O4thlYEe
-    > Zi4X<\/textarea>
+    > ummary: 1HWFlnPZrcMBvFUMuAWH2YyOG7uTWMn9eRFXgPoPUeL5RB
+    > pUVd<\/textarea>
     > <textarea(?!name="summary").+name="summary"[^>]*>((?!<          OK
     > \/textarea>).+)<\/textarea>
     > <input(?!name="subject").+name="subject"(?!value=").+v          OK
     > alue="([^"]+)"
     > <input(?!name="subject").+name="subject"(?!value=").+v          OK
-    > alue="TestPost: x1M8wGj1f0iaZgi3LQFa"
+    > alue="TestPost: yL6SPDOcl4d2ObCFc8q0"
     > <textarea(?!name="content").+name="content"[^>]*>((?!<          OK
     > \/textarea>).+)<\/textarea>
     >  data-blog-form="post-post-update"                              OK
@@ -259,12 +277,12 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
  .. Viewing posts signed in working                                   5/ 0/ 0/ 5
     >  data-blog-content-                                             OK
     > element="content"[^>]*>\s*TestContent:
-    > uDBvNYU6aBV1GcigIztXQp8BIM0RX8iPtHpkklUec4ZCOionee\s*<
+    > rHVxT6TWfUGWnJPeaRvow8JZ5hbzlacTppHVcdEctVabLKPQGZ\s*<
     >  data-blog-content-                                             OK
     > element="summary"[^>]*>\s*TestSummary:
-    > UFam0GkCxxxO9WFyDgzlTOsJZwMit6l45SuWP5O4thlYEeZi4X\s*<
+    > 1HWFlnPZrcMBvFUMuAWH2YyOG7uTWMn9eRFXgPoPUeL5RBpUVd\s*<
     >  data-blog-content-element="subject"[^>]*>\s*TestPost:          OK
-    > x1M8wGj1f0iaZgi3LQFa\s*<
+    > yL6SPDOcl4d2ObCFc8q0\s*<
     >  data-blog-control="get-logout"                                 OK
     >  data-blog-control="get-post-create"                            OK
 
@@ -275,6 +293,7 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
 --------------------------------------------------------------------------------
 Test if user signup works - creating initial testuser for             1/ 0/ 0/ 1
 later use
+--------------------------------------------------------------------------------
  .. Signup works                                                      2/ 0/ 0/ 2
     >  data-blog-control="get-post-create"                            OK
     >  data-blog-control="get-home"                                   OK
@@ -286,4 +305,4 @@ later use
 
 ## Version
 
-2017-03-19T17:41:11.276000
+2017-03-19T18:07:06.772000

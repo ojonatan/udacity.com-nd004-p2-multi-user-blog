@@ -1,8 +1,0 @@
-main.py
-
---- ud_user.py
---- ud_blog.py
-
-
-alle functionen sollten in moduklen gekapseklt sein
-
