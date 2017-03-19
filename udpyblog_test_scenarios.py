@@ -13,16 +13,13 @@ scenarios = {
             'data': {
                 'username': None,
                 'password': 'testpass',
-                'verify': '',
+                'verify': 'testpass',
                 'email': 'o@cccccX.com',
                 'submit': [
                     'username',
                     'password',
                     'verify',
                     'email'
-                ],
-                'statements': [
-                    'data["verify"] = data["password"]'
                 ]
             },
             'assertions': {
@@ -398,16 +395,13 @@ scenarios = {
             'data': {
                 'username': None, #overridden
                 'password': 'testpass',
-                'verify': '',
+                'verify': 'testpass',
                 'email': 'o@ccccc.com',
                 'submit': [
                     'username',
                     'password',
                     'verify',
                     'email'
-                ],
-                'statements': [
-                    'data["verify"] = data["password"]'
                 ]
             },
             'assertions': {
@@ -430,16 +424,13 @@ scenarios = {
             'data': {
                 'username': 'ww',
                 'password': 'assdfasdfasdf',
-                'verify': '',
+                'verify': 'assdfasdfasdf',
                 'email': 'o@ccccc.com',
                 'submit': [
                     'username',
                     'password',
                     'verify',
                     'email'
-                ],
-                'statements': [
-                    'data["verify"] = data["password"]'
                 ]
             },
             'assertions': {
@@ -462,16 +453,13 @@ scenarios = {
             'data': {
                 'username': 'testuser',
                 'password': 'f',
-                'verify': '',
+                'verify': 'f',
                 'email': 'o@ccccc.com',
                 'submit': [
                     'username',
                     'password',
                     'verify',
                     'email'
-                ],
-                'statements': [
-                    'data["verify"] = data["password"]'
                 ]
             },
             'assertions': {
@@ -523,16 +511,13 @@ scenarios = {
             'data': {
                 'username': 'testuser',
                 'password': 'awefwefaawefewf',
-                'verify': '',
+                'verify': 'awefwefaawefewf',
                 'email': 'oxxxccccc.com',
                 'submit': [
                     'username',
                     'password',
                     'verify',
                     'email'
-                ],
-                'statements': [
-                    'data["verify"] = data["password"]'
                 ]
             },
             'assertions': {
@@ -553,7 +538,7 @@ tests = {
         'desc': "Test if user signup works - creating initial testuser for later use",
         'scenarios': [
             {
-                "group": "post-signup-out-success",
+                "scenario": "post-signup-out-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -581,7 +566,7 @@ tests = {
         'desc': "Submitting signups with bad data",
         'scenarios': [
             {
-                "group": "post-signup-out-failure",
+                "scenario": "post-signup-out-failure",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -613,7 +598,7 @@ tests = {
         'desc': "Testing, if the initial view features the logged out view of the blog",
         'scenarios': [
             {
-                "group": "get-main-out-success"
+                "scenario": "get-main-out-success"
             }
         ]
     },
@@ -621,7 +606,7 @@ tests = {
         'desc': "Log in with existing user works",
         'scenarios': [
             {
-                "group": "post-login-out-success",
+                "scenario": "post-login-out-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -653,7 +638,7 @@ tests = {
        'desc': "Log out right after login works",
        'scenarios': [
            {
-                "group": "post-login-out-success",
+                "scenario": "post-login-out-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -680,7 +665,7 @@ tests = {
                 }
             },
             {
-                "group": "get-main-out-success"
+                "scenario": "get-main-out-success"
             }
        ]
     },
@@ -688,7 +673,7 @@ tests = {
         'desc': "Log out right after signup works",
         'scenarios': [
             {
-                "group": "post-signup-out-success",
+                "scenario": "post-signup-out-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -718,7 +703,7 @@ tests = {
                 }
             },
             {
-                "group": "get-logout-in-success"
+                "scenario": "get-logout-in-success"
             }
        ]
     },
@@ -726,7 +711,7 @@ tests = {
         'desc': "The create blog post form is there and ready for input",
         'scenarios': [
             {
-                "group": "post-login-out-success",
+                "scenario": "post-login-out-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -753,7 +738,7 @@ tests = {
                 }
             },
             {
-                "group": "get-post-create-in-success"
+                "scenario": "get-post-create-in-success"
             }
        ]
     },
@@ -761,7 +746,7 @@ tests = {
         'desc': "Post too short input for a blog post and see 3 errors",
         'scenarios': [
             {
-                "group": "post-login-out-success",
+                "scenario": "post-login-out-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -788,7 +773,7 @@ tests = {
                 }
             },
             {
-                "group": "post-post-create-in-failure"
+                "scenario": "post-post-create-in-failure"
             }
        ]
     },
@@ -796,7 +781,7 @@ tests = {
         'desc': "Create a poisoned but formal correct new blog post and verify sanitization",
         'scenarios': [
             {
-                "group": "post-login-out-success",
+                "scenario": "post-login-out-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -823,7 +808,7 @@ tests = {
                 }
             },
             {
-                "group": "post-post-create-in-success"
+                "scenario": "post-post-create-in-success"
             }
         ]
     },
@@ -831,7 +816,7 @@ tests = {
         'desc': "Users can only like/unlike posts from authors other then themselves",
         'scenarios': [
             {
-                "group": "post-signup-out-success",
+                "scenario": "post-signup-out-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -861,7 +846,7 @@ tests = {
                 }
             },
             {
-                "group": "get-post-view-in-success",
+                "scenario": "get-post-view-in-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -888,7 +873,7 @@ tests = {
                 }
             },
             {
-                "group": "post-post-like-in-success",
+                "scenario": "post-post-like-in-success",
                 "filter": {
                     "selected": "like",
                     "overrides": {
@@ -915,7 +900,7 @@ tests = {
                 }
             },
             {
-                "group": "post-post-like-in-success",
+                "scenario": "post-post-like-in-success",
                 "filter": {
                     "selected": "unlike",
                     "overrides": {
@@ -942,10 +927,10 @@ tests = {
                 }
             },
             {
-                "group": "post-post-create-in-success"
+                "scenario": "post-post-create-in-success"
             },
             {
-                "group": "post-post-like-in-failure",
+                "scenario": "post-post-like-in-failure",
                 "filter": {
                     "selected": "like",
                     "overrides": {
@@ -977,7 +962,7 @@ tests = {
         'desc': "Update blog post and verify changes",
         'scenarios': [
             {
-                "group": "post-login-out-success",
+                "scenario": "post-login-out-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -1004,7 +989,7 @@ tests = {
                 }
             },
             {
-                "group": "post-post-create-in-success",
+                "scenario": "post-post-create-in-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -1062,7 +1047,7 @@ tests = {
                 }
             },
             {
-                "group": "get-post-view-in-success",
+                "scenario": "get-post-view-in-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -1161,7 +1146,7 @@ tests = {
                 }
             },
             {
-                "group": "get-post-update-in-success",
+                "scenario": "get-post-update-in-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {
@@ -1260,7 +1245,7 @@ tests = {
                 }
             },
             {
-                "group": "post-post-update-in-success",
+                "scenario": "post-post-update-in-success",
                 "filter": {
                     "selected": "*",
                     "overrides": {

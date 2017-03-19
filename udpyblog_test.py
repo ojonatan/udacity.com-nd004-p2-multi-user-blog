@@ -16,6 +16,8 @@ import logging
 import json
 import copy
 
+path = os.path.dirname(os.path.realpath(__file__))
+
 # Helper functions
 
 def merge_copy_dict(d1, d2):
@@ -53,114 +55,79 @@ class ExpectingTestCase(unittest.TestCase):
         except failure.__class__:
             self._result.addFailure(self, sys.exc_info())
 
-    def expect_in(self, needle, response, msg, negate):
-        self.tests_run += 1
-        self._num_expectations += 1
-        if bool(response.body.find(needle) == -1) != bool(negate):
-            extra = ""
-            if negate:
-                extra = " not"
+    def _expect(self, scenario, response):
+        negate = "negate" in scenario and scenario["negate"]
+        subtest = 0
 
-            self._dump(
-                re.sub(r'[^a-zA-Z0-9,]','_',msg),
-                needle,
-                response
-            )
+        subject = scenario["subject"]
+        if "data" in scenario:
+            subject = scenario["subject"].format(**scenario["data"])
 
-            msg = self._format_error(
-                **{
-                    "msg": msg,
-                    "extra": extra,
-                    "assertion": needle,
-                    "html": response.body
-                }
-            )
-            self._fail(self.failureException(msg))
-            return False
-        return True
+        # register assertions
+        id = 0
+        for type in scenario["assertions"]:
+            for assertion in scenario["assertions"][type]:
+                self._register_assertion(
+                    scenario,
+                    "{}:{}:{}".format(
+                        scenario["id"],
+                        type,
+                        id
+                    ),
+                    assertion,
+                    type
+                )
+                id += 1
 
-    def expect_not_in(self, needle, response, msg, negate):
-        self.tests_run += 1
-        self._num_expectations += 1
-        if bool(response.body.find(needle) != -1) != bool(negate):
-            extra = " not"
-            if negate:
-                extra = ""
+        extras = [ "", " not" ]
+        for assertion_id in self.results[self.testcase]['tests'][scenario["id"]]['assertions']:
+            assertion = self.results[self.testcase]['tests'][scenario["id"]]['assertions'][assertion_id]
+            subtest += 1
+            self.tests_run += 1
+            self._num_expectations += 1
+            yes = True
+            if assertion["type"] == "in":
+                check_func = lambda assertion,data: bool(data.find(assertion["assertion"]) > -1)
 
-            self._dump(
-                re.sub(r'[^a-zA-Z0-9,]','_',msg),
-                needle,
-                response
-            )
+            elif assertion["type"] == "not_in":
+                yes = False
+                check_func = lambda assertion,data: bool(data.find(assertion["assertion"]) == -1)
 
-            msg = self._format_error(
-                **{
-                    "msg": msg,
-                    "extra": extra,
-                    "assertion": needle,
-                    "html": response.body
-                }
-            )
+            if assertion["type"] == "re":
+                check_func = lambda assertion,data: bool(re.search(assertion["assertion"], data, re.MULTILINE|re.DOTALL))
 
-            self._fail(self.failureException(msg))
-            return False
-        return True
+            if assertion["type"] == "not_re":
+                yes = False
+                check_func = lambda assertion,data: bool(not re.search(assertion["assertion"], data, re.MULTILINE|re.DOTALL))
 
-    def expect_re(self, regexp, response, msg, negate):
-        self.tests_run += 1
-        self._num_expectations += 1
-        if bool(not re.search(regexp, response.body, re.MULTILINE|re.DOTALL)) != bool(negate):
-            extra = ""
-            if negate:
-                extra = " not"
-            logging.info("NOT FOUND: {}".format(regexp))
+            extra = extras[int(yes == negate)]
 
-            self._dump(
-                re.sub(r'[^a-zA-Z0-9,]','_',msg),
-                regexp,
-                response
-            )
+            # evaluating the tests itself. each test can contain x subtests
 
-            msg = self._format_error(
-                **{
-                    "msg": msg,
-                    "extra": extra,
-                    "assertion": regexp,
-                    "html": response.body
-                }
-            )
+            test_result = check_func(assertion, response.body)
 
-            self._fail(self.failureException(msg))
-            return False
-        return True
+            result = (test_result != bool(negate))
 
-    def expect_not_re(self, regexp, response, msg, negate):
-        self.tests_run += 1
-        self._num_expectations += 1
-        if bool(re.search(regexp, response.body, re.MULTILINE|re.DOTALL)) != bool(negate):
-            extra = " not"
-            if negate:
-                extra = ""
+            self._report_assertion(assertion, result)
 
-            self._dump(
-                re.sub(r'[^a-zA-Z0-9,]','_',msg),
-                regexp,
-                response
-            )
+            if not result:
 
-            msg = self._format_error(
-                **{
-                    "msg": msg,
-                    "extra": extra,
-                    "assertion": regexp,
-                    "html": response.body
-                }
-            )
+                self._dump(
+                    re.sub(r'[^a-zA-Z0-9,]','_',subject),
+                    assertion["assertion"],
+                    response
+                )
 
-            self._fail(self.failureException(msg))
-            return False
+                msg = self._format_error(
+                    **{
+                        "msg": subject,
+                        "extra": extra,
+                        "assertion": assertion["assertion"],
+                        "html": response.body
+                    }
+                )
 
-        return True
+                self._fail(self.failureException(msg))
 
     def _format_error(self, **args):
         errors = self._extract_errors(args["html"])
@@ -199,7 +166,7 @@ Test({counter}): {msg} expected{extra} to contain '{assertion}'.{error_messages}
             os.path.join(
                 'dumps',
                 "{}{}-{}.dump".format(
-                    self.prefix,
+                    TestUdPyBlog.prefix,
                     filename,
                     self.tests_run
                 )
@@ -235,6 +202,7 @@ class TestUdPyBlogTools():
     def getBlogEntityContext(self, params):
         return TestUdPyBlog._get_blog_entity_context(params)
 
+
 class TestUdPyBlog(ExpectingTestCase):
     """
     Testing the UdPyBlog module. Multiple tests can be configured
@@ -256,6 +224,16 @@ class TestUdPyBlog(ExpectingTestCase):
 
 
     """
+
+    prefix = 'tests-{}-'.format(int(time.time()))
+    if os.path.isfile(
+        os.path.join(
+            path,
+            "udpyblog_test_prefix.py"
+        )
+    ):
+        import udpyblog_test_prefix
+        prefix = udpyblog_test_prefix.prefix
 
     blog_entity_context = {}
     nosegae_datastore_v3 = True
@@ -285,9 +263,46 @@ class TestUdPyBlog(ExpectingTestCase):
         )
         self.tools = TestUdPyBlogTools()
         self.testbed.init_memcache_stub()
-        self.prefix = 'tests-' + str(time.time()) + '-'
-        for test_func in self.scenarios:
-            for test_case in self.scenarios[test_func]:
+        self.results = {}
+        self.testcase = None
+
+        for test_func in self.tests:
+            self.results[test_func] = {
+                "function": test_func,
+                "desc": self.tests[test_func]["desc"],
+                "tests": {},
+                "scores": {
+                    "OK": 0,
+                    "NOT TESTED": 0,
+                    "FAIL": 0
+                }
+            }
+
+            # assertion level, scenario level, testcase lebvel
+            # w
+            for test_case in self.tests[test_func]["scenarios"]:
+                id = 0
+                for test_scenario in self.scenarios[test_case["scenario"]]:
+                    test_scenario["id"] = "{}:{}".format(test_case["scenario"],id)
+                    id += 1
+                    if "filter" in test_scenario and test_scenario["filter"]["selected"] != "*" and test_scenario["filter"]["selected"] != test_scenario[test_scenario["scope"]]:
+                        continue
+
+                    self.results[test_func]["tests"][test_scenario["id"]] = {
+                        "id": test_scenario["id"],
+                        "test": test_scenario["subject"],
+                        "url": None,
+                        "result": None,
+                        "assertions": {}, # each assertion will be added like {assertion, result}
+                        "scores": {
+                            "OK": 0,
+                            "NOT TESTED": 0,
+                            "FAIL": 0
+                        },
+                        "status": "NOT TESTED",
+                        "time": 0
+                    }
+
                 if "data" in test_case:
                     data = test_case["data"]
                     if "statements" in data:
@@ -296,91 +311,131 @@ class TestUdPyBlog(ExpectingTestCase):
 
                         test_case["data"] = data
 
+
+        logging.info(self.results)
         self.scenarios_md5 = hashlib.md5(json.dumps(self.scenarios)).hexdigest()
 
     def tearDown(self):
+        # prepare results, build summaries etc
+
+        report_filename = "{}{}-report.json".format(TestUdPyBlog.prefix,self.testcase)
+        self._prepare_results()
+
+        self.report = open(report_filename,'a+')
+        self.report.write(json.dumps(self.results[self.testcase]))
+        self.report.close()
+
+        self.index = open("{}reports".format(TestUdPyBlog.prefix),'a+')
+        self.index.write(report_filename + "\n")
+        self.index.close()
+
         self.testbed.deactivate()
         self.app.cookies.clear()
 
+    def _prepare_results(self):
+        for test_id in self.results[self.testcase]["tests"]:
+            result = True
+            test_case = self.results[self.testcase]["tests"][test_id]
+            for assertion_id in test_case["assertions"]:
+                assertion = test_case["assertions"][assertion_id]
+                test_case["scores"][assertion["status"]] += 1
+                if not assertion["result"]:
+                    result = False
+
+            if len(test_case["assertions"]) == test_case["scores"]["NOT TESTED"]:
+                test_case["status"] = "NOT TESTED"
+
+            else:
+                test_case["result"] = len(test_case["assertions"]) == test_case["scores"]["OK"]
+                test_case["status"] = "FAIL"
+                if test_case["result"]:
+                    test_case["status"] = "OK"
+
+            self.results[self.testcase]["scores"][test_case["status"]] += 1
+
+        if len(self.results[self.testcase]["tests"]) == self.results[self.testcase]["scores"]["NOT TESTED"]:
+            self.results[self.testcase]["status"] = "NOT TESTED"
+
+        else:
+            self.results[self.testcase]["result"] = (len(self.results[self.testcase]["tests"]) == self.results[self.testcase]["scores"]["OK"])
+            self.results[self.testcase]["status"] = "FAIL"
+            if self.results[self.testcase]["result"]:
+                self.results[self.testcase]["status"] = "OK"
+
+    def _register_assertion(self, scenario, id, assertion, type):
+        self.results[self.testcase]['tests'][scenario["id"]]['assertions'][id] = {
+            'id': id,
+            'assertion': assertion,
+            'type': type,
+            'result': None,
+            'status': 'NOT TESTED'
+        }
+
+    def _get_assertions(self, id):
+        return self.results[self.testcase]['tests'][id]['assertions']
+
+    def _report_assertion(self, assertion, result):
+        assertion["result"] = result
+        assertion["status"] = "FAIL"
+        if result:
+            assertion["status"] = "OK"
+
     def test_000_signup_signup_post_works(self):
         """Test if user signup works - creating initial testuser for later use"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_000_signup_signup_post_works"])
-        )
-
-    def Xtest_001_signup_form_functional(self):
-        """Is the signup form functional"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_001_signup_form_functional"])
-        )
-
-    def test_002_signup_signup_post_functional_error_handling(self):
-        """Submitting signups with bad data"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_002_signup_signup_post_functional_error_handling"])
-        )
-
-    def test_003_home_page_logged_out(self):
-        """Testing, if the initial view features the logged out view of the blog"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_003_home_page_logged_out"])
-        )
-
-    def test_100_login_works(self):
-        """Log in with existing user works"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_100_login_works"])
-        )
+        self._run_tests("test_000_signup_signup_post_works")
 
     def test_101_logout_after_login_works(self):
         """Log out right after login works"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_101_logout_after_login_works"])
-        )
+        self._run_tests("test_101_logout_after_login_works")
+
+    def test_002_signup_signup_post_functional_error_handling(self):
+        """Submitting signups with bad data"""
+        self._run_tests("test_002_signup_signup_post_functional_error_handling")
+
+    def test_003_home_page_logged_out(self):
+        """Testing, if the initial view features the logged out view of the blog"""
+        self._run_tests("test_003_home_page_logged_out")
+
+    def test_100_login_works(self):
+        """Log in with existing user works"""
+        self._run_tests("test_100_login_works")
+
+    def test_101_logout_after_login_works(self):
+        """Log out right after login works"""
+        self._run_tests("test_101_logout_after_login_works")
 
     def test_102_logout_after_signup_works(self):
         """Log out right after signup works"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_102_logout_after_signup_works"])
-        )
+        self._run_tests("test_102_logout_after_signup_works")
 
     def test_103_create_blog_post_form_works(self):
         """The create blog post form is there and ready for input"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_103_create_blog_post_form_works"])
-        )
+        self._run_tests("test_103_create_blog_post_form_works")
 
     def test_104_create_blog_post_submit_error_handling(self):
         """Post too short input for a blog post and see 3 errors"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_104_create_blog_post_submit_error_handling"])
-        )
+        self._run_tests("test_104_create_blog_post_submit_error_handling")
 
     def test_105_create_blog_post_submit_works(self):
         """Create a poisoned but formal correct new blog post and verify sanitization"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_105_create_blog_post_submit_works"])
-        )
+        self._run_tests("test_105_create_blog_post_submit_works")
 
     def test_106_users_can_only_like_posts_from_authors_other_then_themselves(self):
         """Users can only like/unlike posts from authors other then themselves"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_106_users_can_only_like_posts_from_authors_other_then_themselves"])
-        )
+        self._run_tests("test_106_users_can_only_like_posts_from_authors_other_then_themselves")
 
     def test_107_update_blog_post_and_verify_changes(self):
         """Update blog post and verify changes"""
-        self.assertTrue(
-            self._run_tests(self.tests["test_107_update_blog_post_and_verify_changes"])
-        )
+        self._run_tests("test_107_update_blog_post_and_verify_changes")
 
     def _run_tests(self, testcase):
+        self.testcase = testcase
         result = True
-        desc = testcase["desc"]
+        desc = self.tests[testcase]["desc"]
         scenarios_selected = []
-        for selector in testcase["scenarios"]:
+        for selector in self.tests[testcase]["scenarios"]:
 
-            group_selector = selector["group"]
+            group_selector = selector["scenario"]
             logging.info("Adding scenarios from the <<{}>> selector ({} scenarios available)".format(group_selector,len(self.scenarios[group_selector])))
             # selected scenarios might be a key with an empty dict. in this case the scenario is just taken as is
             if "filter" in selector:
@@ -501,35 +556,7 @@ class TestUdPyBlog(ExpectingTestCase):
                         dict(response.headers)["Location"]
                     )
 
-            negate = "negate" in scenario and scenario["negate"]
-            for type in scenario["assertions"]:
-                subject = scenario["subject"]
-                if "data" in scenario:
-                    subject = scenario["subject"].format(**scenario["data"])
-
-                if type == "in":
-                    for assertion in scenario["assertions"][type]:
-                        logging.info("... {} (negate: {})".format(assertion,negate))
-                        if not self.expect_in(assertion,response,subject,negate):
-                            result = False
-
-                if type == "not_in":
-                    for assertion in scenario["assertions"][type]:
-                        logging.info("... {} (negate: {})".format(assertion,negate))
-                        if not self.expect_not_in(assertion,response,subject,negate):
-                            result = False
-
-                if type == "re":
-                    for assertion in scenario["assertions"][type]:
-                        logging.info("... {} (negate: {})".format(assertion,negate))
-                        if not self.expect_re(assertion,response,subject,negate):
-                            result = False
-
-                if type == "not_re":
-                    for assertion in scenario["assertions"][type]:
-                        logging.info("... {} (negate: {})".format(assertion,negate))
-                        if not self.expect_not_re(assertion,response,subject,negate):
-                            result = False
+            self._expect(scenario, response)
 
         return result
 
