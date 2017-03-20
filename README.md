@@ -10,8 +10,7 @@ This blog implementation focuses on the following aspects
 * Comprehensive and adaptive Testing
 * Modularity
 
-The blog features rich media content powered by jQuery Plugins. The uploaded
-Files - images - require some maintenance work per request.
+The blog features rich media content powered by jQuery Plugins. Hooks on log in/log out and on post update and creation help to keep the system free of orphaned BLOBS.
 
 ## TODO
 
@@ -235,15 +234,15 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
     > [in]  data-blog-control="get-post-update"                       OK
     > [re]  data-blog-content-                                        OK
     > element="subject"[^>]*>\s*TestSubjectUPDATE: TestPost:
-    > 3M3DxXrGKB8kxQ21o6S3\s*<
+    > ZIPftCDl53KPmY4lDwAt\s*<
     > [re]  data-blog-content-                                        OK
     > element="summary"[^>]*>\s*TestSummaryUPDATE:
     > TestSummary:
-    > LLQBx6yv1QTTpsXtTvaoinz2deZiMsiN6qgFu4p8PdqOkwcsIT\s*<
+    > wAUOXTQKPrwvbV7wgfvMQruzJ3AM67RNSEv4iCBYw9CVq6r2qv\s*<
     > [re]  data-blog-content-                                        OK
     > element="content"[^>]*>\s*TestContentUPDATE:
     > TestContent:
-    > v2iew4Hutz0ry7YLKAodSq1xcpIHCCMYjDs6a6t9SeEqLYCfYe\s*<
+    > vA1rg2NquWqY14dcjSsjMltzYuv6DYLTFlKct1TrvHrRpOPEea\s*<
     > [in]  data-blog-control="get-logout"                            OK
 
  .. Blog post creation: Paste a perfectly ok blog post, but           6/ 0/ 0/ 6
@@ -260,17 +259,17 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
 
  .. Post update form is accessible and is fully featured              8/ 0/ 0/ 8
     > [re] <textarea(?!name="content").+name="content"[^>]*>          OK
-    > TestContent: v2iew4Hutz0ry7YLKAodSq1xcpIHCCMYjDs6a6t9S
-    > eEqLYCfYe<\/textarea>
+    > TestContent: vA1rg2NquWqY14dcjSsjMltzYuv6DYLTFlKct1Trv
+    > HrRpOPEea<\/textarea>
     > [re] <textarea(?!name="summary").+name="summary"[^>]*>          OK
-    > TestSummary: LLQBx6yv1QTTpsXtTvaoinz2deZiMsiN6qgFu4p8P
-    > dqOkwcsIT<\/textarea>
+    > TestSummary: wAUOXTQKPrwvbV7wgfvMQruzJ3AM67RNSEv4iCBYw
+    > 9CVq6r2qv<\/textarea>
     > [re] <textarea(?!name="summary").+name="summary"[^>]*>          OK
     > ((?!<\/textarea>).+)<\/textarea>
     > [re] <input(?!name="subject").+name="subject"(?!value=          OK
     > ").+value="([^"]+)"
     > [re] <input(?!name="subject").+name="subject"(?!value=          OK
-    > ").+value="TestPost: 3M3DxXrGKB8kxQ21o6S3"
+    > ").+value="TestPost: ZIPftCDl53KPmY4lDwAt"
     > [re] <textarea(?!name="content").+name="content"[^>]*>          OK
     > ((?!<\/textarea>).+)<\/textarea>
     > [in]  data-blog-form="post-post-update"                         OK
@@ -279,13 +278,13 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
  .. Viewing posts signed in working                                   5/ 0/ 0/ 5
     > [re]  data-blog-content-                                        OK
     > element="content"[^>]*>\s*TestContent:
-    > v2iew4Hutz0ry7YLKAodSq1xcpIHCCMYjDs6a6t9SeEqLYCfYe\s*<
+    > vA1rg2NquWqY14dcjSsjMltzYuv6DYLTFlKct1TrvHrRpOPEea\s*<
     > [re]  data-blog-content-                                        OK
     > element="summary"[^>]*>\s*TestSummary:
-    > LLQBx6yv1QTTpsXtTvaoinz2deZiMsiN6qgFu4p8PdqOkwcsIT\s*<
+    > wAUOXTQKPrwvbV7wgfvMQruzJ3AM67RNSEv4iCBYw9CVq6r2qv\s*<
     > [re]  data-blog-content-                                        OK
     > element="subject"[^>]*>\s*TestPost:
-    > 3M3DxXrGKB8kxQ21o6S3\s*<
+    > ZIPftCDl53KPmY4lDwAt\s*<
     > [in]  data-blog-control="get-logout"                            OK
     > [in]  data-blog-control="get-post-create"                       OK
 
@@ -308,4 +307,4 @@ later use
 
 ## Version
 
-2017-03-20T13:44:47.572000
+2017-03-20T18:36:00.820000

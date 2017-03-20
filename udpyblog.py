@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import string
 import random
+import datetime
 import webapp2
 import re
 import logging
@@ -254,7 +255,7 @@ class UdPyBlogHandler(webapp2.RequestHandler):
             gs_bucket_name=bucket
         )
 
-    def purge_images(self, post=None):
+    def process_images(self, post=None, expiry=None):
         """
         This function should be triggered by new/update post post requests.
         It assigns uploaded images as detected in the content to the
@@ -284,13 +285,21 @@ class UdPyBlogHandler(webapp2.RequestHandler):
             logging.info("Images found that are related to this post or not yet to any: {}".format(images_check));
             images_dropped = list(set(images_check) - set(images))
 
+            logging.info("Purging {} unmapped images. ({}...)".format(len(images_dropped),images_dropped[0:3]))
         else:
-            images_stored = UdPyBlogImage.all().filter('user =', self.user.key()).filter('post =', None)
-            images_dropped = []
-            for image in images_stored:
-                images_dropped.append(str(image.blob_key.key()))
+            if self.user:
+                images_stored = UdPyBlogImage.all().filter('user =', self.user.key()).filter('post =', None)
+                images_dropped = []
+                for image in images_stored:
+                    images_dropped.append(str(image.blob_key.key()))
 
-        logging.info("Purging {} unmapped images. ({}...)".format(len(images_dropped),images_dropped[0:3]))
+            elif expiry:
+                logging.info("Purging expired images ({})".format(expiry));
+                images_stored = UdPyBlogImage.all().filter('post =', None).filter('created <', expiry)
+                images_dropped = []
+                for image in images_stored:
+                    images_dropped.append(str(image.blob_key.key()))
+
 
         for image in images_dropped:
             logging.info("KEY::::::::::{}:::::".format(image))
@@ -305,12 +314,15 @@ class UdPyBlogHandler(webapp2.RequestHandler):
                 try:
                     logging.info("Adding image " + blob_key)
                     image_placed = UdPyBlogImage.all().filter('blob_key = ', blob_key).get()
-                    image_placed.post_key = post.key()
+                    image_placed.post = post.key()
                     image_placed.put()
                 except:
                     logging.info(sys.exc_info())
                     self.error(500)
 
+class UdPyBlogTaskHandler(UdPyBlogHandler):
+    def auth(self):
+        return self.request.headers.get("X-AppEngine-Cron") == "true"
 
 class UdPyBlogImageUploadPrepareHandler(blobstore_handlers.BlobstoreUploadHandler, UdPyBlogHandler):
     def get(self):
@@ -402,7 +414,7 @@ class UdPyBlogSignupHandlerLogout(UdPyBlogHandler):
     def get(self):
         self.auth()
         if self.user:
-            self.purge_images()
+            self.process_images()
 
         self.session.clear()
         self.response.headers.add_header("Set-Cookie", str("%s=%s; path=/" % ( "session","" ) ) )
@@ -666,7 +678,7 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                 self.args["cover_image"].put()
 
             logging.info("Purging orphaned upload images...")
-            self.purge_images(post)
+            self.process_images(post=post)
 
             blog_entity_context = {
                 "post_id": post.key().id(),
@@ -970,6 +982,30 @@ class UdPyBlogInitHandler(UdPyBlogSignupHandler):
         self.render("init.html", **self.args )
         return
 
+class UdPyBlogPostCleanUpHandler(UdPyBlogTaskHandler):
+    def get(self):
+        if self.auth():
+            try:
+                logging.info("Starting Clean Up")
+                self.process_images(
+                    expiry=(
+                        datetime.datetime.today()
+                        +
+                        datetime.timedelta(
+                            seconds=(
+                                UdPyBlog.blob_expiry_seconds * -1
+                            )
+                        )
+                    )
+                )
+            except:
+                logging.info(sys.exc_info())
+            self.code(200)
+            return
+
+        self.code(403)
+        return
+
 class UdPyBlogSignupHandlerLogin(UdPyBlogSignupHandler):
     fields = [ "username","password" ]
     required = fields
@@ -1011,7 +1047,7 @@ class UdPyBlogSignupHandlerLogin(UdPyBlogSignupHandler):
                         return
 
                     self.user = user
-                    self.purge_images()
+                    self.process_images()
                     self.redirect_prefixed("")
                     return
             else:
@@ -1054,7 +1090,8 @@ class UdPyBlog():
         ('init', UdPyBlogInitHandler),
         ('newpost', UdPyBlogPostHandler),
         ('image/upload_url',UdPyBlogImageUploadPrepareHandler),
-        ('image/upload',UdPyBlogImageUploadHandler)
+        ('image/upload',UdPyBlogImageUploadHandler),
+        ('_cleanup', UdPyBlogPostCleanUpHandler) # featured by cron
     ]
 
     regexp = {
@@ -1065,6 +1102,7 @@ class UdPyBlog():
 
     template_folder = "dist/templates"
     blog_prefix = "/"
+    blob_expiry_seconds = (5*24*3600)
     static_path_prefix = ""
     jinja_env = None
     input_requirements = {
@@ -1103,6 +1141,9 @@ class UdPyBlog():
 
             if "image_view_url_part" in config:
                 cls.image_view_url_part = config["image_view_url_part"]
+
+            if "blob_expiry_seconds" in config:
+                cls.blob_expiry_seconds = config["blob_expiry_seconds"]
 
             if "input_requirements" in config:
                 cls.input_requirements = cls.merge_dicts(

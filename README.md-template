@@ -10,8 +10,7 @@ This blog implementation focuses on the following aspects
 * Comprehensive and adaptive Testing
 * Modularity
 
-The blog features rich media content powered by jQuery Plugins. The uploaded
-Files - images - require some maintenance work per request.
+The blog features rich media content powered by jQuery Plugins. Hooks on log in/log out and on post update and creation help to keep the system free of orphaned BLOBS.
 
 ## TODO
 
