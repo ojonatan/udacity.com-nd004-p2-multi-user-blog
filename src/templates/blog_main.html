@@ -2,33 +2,55 @@
 
 {% block content %}
 
+	<div class="container-fluid">
+		<div class="row">
 	{% for post in posts.order('-created') %}
-    <div class="post">
-        <span style="float: right">{{post.created}}</span>
+			<article class="post col-xs-12 col-sm-6">
 		{% if post.cover_image %}
-        <div class="cover-image" style="background-image: url({{ image_url_prefix }}{{ post.cover_image.blob_key.key() }})"></div>
-		{% else %}
-        <div class="cover-image"></div>
-		{% endif %}
-        <h2>{{post.subject}}</h2>
-        <div style="clear: both;">Author: {{post.user.username}}</div>
-        <div>{{post.summary}}</div>
-
-        <a href="{{url_prefix}}post/{{post.key().id()}}" data-blog-control="get-post-view">read more</a><br>
-
-		{% if user.legit and user.username != post.user.username %}
-		<form action="{{url_prefix}}post/{{post.key().id()}}/like" method="post" data-blog-form="post-post-like">
-			{% if user.liked_posts.filter('post = ',post.key()).count() == 1 %}
-			<button type="submit" data-blog-control="post-unlike">Unlike!</button>
-			{% else %}
-			<button type="submit" data-blog-control="post-like">Like!</button>
+		        <div class="post-cover-image" style="background-image: url({{ image_url_prefix }}{{ post.cover_image.blob_key.key() }})">
+			{% if user.legit and user.username != post.user.username %}
+					<form action="{{url_prefix}}post/{{post.key().id()}}/like" method="post" data-blog-form="post-post-like">
+				{% if user.liked_posts.filter('post = ',post.key()).count() == 1 %}
+						<button type="submit" class="un-like-button" data-blog-control="post-unlike">Unlike!</button>
+				{% else %}
+						<button type="submit" class="like-button" data-blog-control="post-like">Like!</button>
+				{% endif %}
+					</form>
 			{% endif %}
-		</form>
+
+		        </div>
+		{% else %}
+		        <div class="post-cover-image">
+			{% if user.legit and user.username != post.user.username %}
+					<form action="{{url_prefix}}post/{{post.key().id()}}/like" method="post" data-blog-form="post-post-like">
+				{% if user.liked_posts.filter('post = ',post.key()).count() == 1 %}
+						<button type="submit" class="un-like-button" data-blog-control="post-unlike">Unlike!</button>
+				{% else %}
+						<button type="submit" class="like-button" data-blog-control="post-like">Like!</button>
+				{% endif %}
+					</form>
+			{% endif %}
+
+
+		        </div>
 		{% endif %}
-    </div>
-    <hr />
+				<div class="post-header">
+					<div class="post-date">{{ post.get_fancy_date() }}</div>
+					<h4>{{post.subject}}</h4>
+				</div>
+
+				<br class="clearer">
+
+				<div class="post-author">by {{post.user.username}}</div>
+
+				<div class="post-summary">{{post.summary}}</div>
+
+				<a href="{{url_prefix}}post/{{post.key().id()}}" data-blog-control="get-post-view">read more</a><br>
+
+			</article>
 	{% endfor %}
-
-<a href="{{url_prefix}}newpost" data-blog-control="get-post-create">new post!!</a>
-
+		</div>
+		<div class="row">
+			<a href="{{url_prefix}}newpost" data-blog-control="get-post-create">new post!!</a>
+		</div>
 {% endblock %}

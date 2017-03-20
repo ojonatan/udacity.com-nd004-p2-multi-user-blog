@@ -16,6 +16,7 @@ config = {
                 "max": 20
             }
         },
+        "post_date_template": "Posted %d, %b %Y, %I:%M%p",
         "image_view_url_part": "image/view/"
     }
 }

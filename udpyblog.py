@@ -44,6 +44,7 @@ class UdPyBlogEntity(db.Model):
             }
         )
 
+
 class UdPyBlogUser(UdPyBlogEntity):
     legit = True
     username = db.StringProperty(required = True)
@@ -51,6 +52,9 @@ class UdPyBlogUser(UdPyBlogEntity):
     salt = db.StringProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
     lastlog = db.DateTimeProperty(auto_now_add = True)
+
+    def get_fancy_date(self):
+        return self.created.strftime(UdPyBlog.post_date_template)
 
     @classmethod
     def empty(cls):
@@ -71,6 +75,9 @@ class UdPyBlogPost(UdPyBlogEntity):
     created = db.DateTimeProperty(auto_now_add = True)
     categories = db.ListProperty(db.Key)
     user = db.ReferenceProperty(UdPyBlogUser, collection_name='posts')
+
+    def get_fancy_date(self):
+        return self.created.strftime(UdPyBlog.post_date_template)
 
 class UdPyBlogPostComment(UdPyBlogEntity):
     legit = True
@@ -93,6 +100,9 @@ class UdPyBlogPostComment(UdPyBlogEntity):
         defaults.update(attributes)
         return UdPyBlogEmptyModel(defaults)
 
+    def get_fancy_date(self):
+        return self.created.strftime(UdPyBlog.post_date_template)
+
 class UdPyBlogPostLikes(db.Model):
     legit = True
     post = db.ReferenceProperty(
@@ -105,6 +115,10 @@ class UdPyBlogPostLikes(db.Model):
         required=True,
         collection_name='liked_posts'
     )
+    created = db.DateTimeProperty(auto_now_add = True)
+
+    def get_fancy_date(self):
+        return self.created.strftime(UdPyBlog.post_date_template)
 
 class UdPyBlogImage(db.Model):
     legit = True
@@ -117,6 +131,9 @@ class UdPyBlogImage(db.Model):
     post = db.ReferenceProperty(required = False)
     blob_key = blobstore.BlobReferenceProperty()
     created = db.DateTimeProperty(auto_now_add = True)
+
+    def get_fancy_date(self):
+        return self.created.strftime(UdPyBlog.post_date_template)
 
 class UdPyBlogHandler(webapp2.RequestHandler):
     signup = False
@@ -1108,6 +1125,8 @@ class UdPyBlog():
     blob_expiry_seconds = (5*24*3600)
     static_path_prefix = ""
     jinja_env = None
+    post_date_template = "%d, %b %Y, %I:%M%p"
+
     input_requirements = {
         "password": {
             "min": 3,
@@ -1147,6 +1166,9 @@ class UdPyBlog():
 
             if "blob_expiry_seconds" in config:
                 cls.blob_expiry_seconds = config["blob_expiry_seconds"]
+
+            if "post_date_template" in config:
+                cls.blob_expiry_seconds = config["post_date_template"]
 
             if "input_requirements" in config:
                 cls.input_requirements = cls.merge_dicts(
