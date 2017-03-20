@@ -530,6 +530,49 @@ scenarios = {
             },
             'overrides': {}
         }
+    ],
+    # Testing, if when trying to access /newpost being logged out will lead me there automatocally after login
+    'get-post-create-out-success': [
+        {
+            'scope': 'get-newpost',
+            'subject': 'Enforcing login',
+            'request': {
+                'method': 'get',
+                'url': '/newpost',
+                'status': 302
+            },
+            'reset': True,
+            'assertions': {
+                'in': [
+                    'data-blog-form="post-login"'
+                ]
+            },
+            'overrides': {}
+        },
+        {
+            'scope': 'login',
+            'subject': 'Login with <<{username}>> works',
+            'request': {
+                'method': 'post',
+                'url': '/login',
+                'status': 302
+            },
+            'reset': False, # reset cookies before execution
+            'data': {
+                'username': None,
+                'password': 'testpass',
+                'submit': [
+                    'username',
+                    'password'
+                ]
+            },
+            'assertions': {
+                'in': [
+                    ' data-blog-form="post-post-create"',
+                ]
+            },
+            'overrides': {}
+        }
     ]
 }
 
@@ -1392,6 +1435,44 @@ tests = {
                                     ]
                                 },
                                 "target": [ ]
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    'test_108_redirect_to_protected_url_after_captive_login_success': {
+        'desc': "Redirect to protected URL after successful login using the captive Portal",
+        'scenarios': [
+            {
+                "scenario": "get-post-create-out-success",
+                "filter": {
+                    "selected": "get-newpost"
+                }
+            },
+            {
+                "scenario": "get-post-create-out-success",
+                "filter": {
+                    "selected": "login",
+                    "overrides": {
+                        "login": [
+                            {
+                                "field": "username",
+                                "template": "{username}",
+                                "replace": {
+                                    "username": [
+                                        {
+                                            "tool": "getBlogEntityContext",
+                                            "tool_args": {
+                                                "scope": "signup",
+                                                "field": "username"
+                                            },
+                                            "field": "username"
+                                        }
+                                    ]
+                                },
+                                "target": [ "data" ]
                             }
                         ]
                     }

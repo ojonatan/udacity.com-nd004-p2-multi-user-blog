@@ -438,6 +438,10 @@ class TestUdPyBlog(ExpectingTestCase):
         """Update blog post and verify changes"""
         self._run_tests("test_107_update_blog_post_and_verify_changes")
 
+    def test_108_redirect_to_protected_url_after_captive_login_success(self):
+        """Redirect to protected URL after successful login using the captive Portal"""
+        self._run_tests("test_108_redirect_to_protected_url_after_captive_login_success")
+
     def _run_tests(self, testcase):
         self.testcase = testcase
         result = True
@@ -465,8 +469,9 @@ class TestUdPyBlog(ExpectingTestCase):
                         if subset_selector < len(self.scenarios[group_selector]):
                             # we want the overrides to be applied at a later point. or inside the testfunc
                             scenario = copy.deepcopy(self.scenarios[group_selector][subset_selector])
-                            if "scope" not in scenario or "*" in scenario_filter["overrides"] or scenario["scope"] in scenario_filter["overrides"]:
-                                scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
+                            if "overrides" in scenario_filter:
+                                if "scope" not in scenario or "*" in scenario_filter["overrides"] or scenario["scope"] in scenario_filter["overrides"]:
+                                    scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
 
                             scenarios_selected.append(scenario)
                         else:
@@ -477,8 +482,9 @@ class TestUdPyBlog(ExpectingTestCase):
                         if abs(subset_selector) < len(self.scenarios[group_selector]):
                             for scenario_ref in range(self.scenarios[group_selector][(subset_selector):]):
                                 scenario = copy.deepcopy(scenario_ref)
-                                if "scope" not in scenario or "*" in scenario_filter["overrides"] or scenario["scope"] in scenario_filter["overrides"]:
-                                    scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
+                                if "overrides" in scenario_filter:
+                                    if "scope" not in scenario or "*" in scenario_filter["overrides"] or scenario["scope"] in scenario_filter["overrides"]:
+                                        scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
 
                                 scenarios_selected.append(scenario)
 
@@ -489,8 +495,9 @@ class TestUdPyBlog(ExpectingTestCase):
                     if subset_selector[1:] < len(self.scenarios[group_selector]):
                         for scenario_ref in range(self.scenarios[group_selector][(subset_selector):]):
                             scenario = copy.deepcopy(scenario_ref)
-                            if "scope" not in scenario or "*" in scenario_filter["overrides"] or scenario["scope"] in scenario_filter["overrides"]:
-                                scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
+                            if "overrides" in scenario_filter:
+                                if "scope" not in scenario or "*" in scenario_filter["overrides"] or scenario["scope"] in scenario_filter["overrides"]:
+                                    scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
 
                             scenarios_selected.append(scenario)
 
@@ -500,8 +507,9 @@ class TestUdPyBlog(ExpectingTestCase):
                     for i in range(len(self.scenarios[group_selector])):
                         if subset_selector == "*" or self.scenarios[group_selector][i]["scope"] == subset_selector:
                             scenario = copy.deepcopy(self.scenarios[group_selector][i])
-                            if "*" in scenario_filter["overrides"] or ("scope" in scenario and scenario["scope"] in scenario_filter["overrides"]):
-                                scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
+                            if "overrides" in scenario_filter:
+                                if "*" in scenario_filter["overrides"] or ("scope" in scenario and scenario["scope"] in scenario_filter["overrides"]):
+                                    scenario["overrides"] = copy.deepcopy(scenario_filter["overrides"])
 
                             scenarios_selected.append(scenario)
 

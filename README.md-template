@@ -10,11 +10,11 @@ This blog implementation focuses on the following aspects
 * Comprehensive and adaptive Testing
 * Modularity
 
-The blog features rich media content powered by jQuery Plugins. Hooks on log in/log out and on post update and creation help to keep the system free of orphaned BLOBS.
+The blog features rich media content powered by jQuery Plugins. Hooks on log in/log out and on post update and creation help to keep the system free of orphaned BLOBS. A cron task checks periodically for expired images.
 
 ## TODO
 
-* Implement cleanup strategy to remove orphaned BLOBS on expiry
+* interpolate test descriptions agains data dict
 * Add markup/ CSS to make the blog appear in shape
 * Maybe add some testing scenarios for redirects and comments
 * EXTRA pagination!

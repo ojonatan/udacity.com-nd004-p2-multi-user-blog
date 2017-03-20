@@ -173,6 +173,17 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(payload))
 
+    def get_redirection(self, rightaway=True):
+        if not "redirect" in self.session:
+            return
+
+        redirect = self.session.get("redirect")
+        self.session["redirect"] = ""
+        if rightaway:
+            return redirect
+
+        self.redirect(redirect)
+
     def auth(self):
         logging.info("+++++++++++ 1")
 #        if self.logout:
@@ -406,7 +417,13 @@ class UdPyBlogSignupSuccessHandler(UdPyBlogHandler):
     restricted = True
     def get(self):
         self.auth()
-        self.render("blog_welcome.html")
+
+        self.render(
+            "blog_welcome.html",
+            **{
+                "redirect": self.get_redirection(False)
+            }
+        )
 
 class UdPyBlogSignupHandlerLogout(UdPyBlogHandler):
     logout = True
@@ -443,56 +460,36 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
 
         self.auth()
         if not self.user:
-            logging.info("||||||||||||||||||< BAD LOGO!!!!!!!!!!!! <<<<")
             self.redirect_prefixed("")
             return
 
         post = UdPyBlogPost.get_by_id(int(post_id))
         if not post or post.user.username == self.user.username:
             if not post:
-                logging.info(")))))))))))))))) BAD POST <<<<")
-            if post.user.username == self.user.username:
-                logging.info("(((((((((((((((( BAD UUUUUUUUSER <<<<")
+                logging.info("Post <<{}>> doesn't exist".format(post_id))
 
-            if self.session["redirect"]:
-                redirect_url = self.session.get("redirect")
-                self.session["redirect"] = ""
-                self.redirect(redirect_url)
-                return
+            if post.user.username == self.user.username:
+                logging.info("User {} may not like his own post!".format(self.user.username))
 
             self.error("403")
             self.render("error.html")
             return
 
-        logging.info(":::::::::::::::::::: ALIIIIIIIIIIIIIIIIIIIIIIIIII BAD POST <<<<")
         posts_user_likes = UdPyBlogPostLikes.all().filter('post =',post.key()).filter('user =',self.user.key())
-        logging.info("<><><>>>>>> 1 <<<<><><><>>>>>>>")
         logging.info("post has likes: " + str(posts_user_likes.count()))
-        logging.info("<><><>>>>>> 2 <<<<><><><>>>>>>>")
         if posts_user_likes.count():
-            logging.info("<><><>>>>>> 3 <<<<><><><>>>>>>>")
             for post_user_likes in posts_user_likes:
-                logging.info("<><><>>>>>> 4 <<<<><><><>>>>>>>")
                 post_user_likes.delete()
         else:
-            logging.info("<><><>>>>>> 5 <<<<><><><>>>>>>>")
             post_like = UdPyBlogPostLikes(
                 post=post,
                 user=self.user
             )
-            logging.info("<><><>>>>>> 6 <<<<><><><>>>>>>>")
             post_like.put()
 
-        logging.info("<><><>>>>>> 7 <<<<><><><>>>>>>>")
-        if "redirect" in self.session:
-            logging.info("<><><>>>>>> 8 <<<<><><><>>>>>>>")
-            logging.info(" <| <| <|  <|  <|  <|  <|  <|  <|  <|  <|  <| REDIREC SET: " + self.session.get("redirect"))
-            redirect_url = self.session.get("redirect")
-            self.session["redirect"] = ""
-            self.redirect(redirect_url)
-            return
 
-        logging.info(" <| <| <|  <|  <|  <|  <|  <|  <|  <|  <|  <| HOOOOOOOOOOOOOOME")
+        self.get_redirection()
+
         self.redirect_prefixed("")
         return
 
@@ -654,6 +651,7 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                     content = UdPyBlog.sanitize_post(self.args["content"]),
                     user = self.user
                 )
+
             else:
                 post = UdPyBlogPost.get_by_id(int(post_id))
                 if not post or post.user.username != self.user.username:
@@ -677,7 +675,7 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                 self.args["cover_image"].post = post.key()
                 self.args["cover_image"].put()
 
-            logging.info("Purging orphaned upload images...")
+            logging.info("Processing contained and dropped images from the current post...")
             self.process_images(post=post)
 
             blog_entity_context = {
@@ -1040,11 +1038,8 @@ class UdPyBlogSignupHandlerLogin(UdPyBlogSignupHandler):
                         "Blog-Entity-Context",
                         json.dumps(blog_entity_context)
                     )
-                    if 'redirect' in self.session and self.session.get("redirect"):
-                        redirect_url = str(self.session.get("redirect"))
-                        self.session['redirect'] = None
-                        self.redirect(redirect_url)
-                        return
+
+                    self.get_redirection()
 
                     self.user = user
                     self.process_images()
