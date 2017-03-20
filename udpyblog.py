@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*
+
+"""UdPyBlog: Multi User Blog Module"""
+
 import os
 import jinja2
 import hashlib
@@ -10,6 +15,7 @@ import logging
 import json
 import sys
 import cgi
+import time
 
 from webapp2_extras import sessions
 
@@ -36,11 +42,6 @@ class UdPyBlogEntity(db.Model):
             {
             }
         )
-
-class UdPyBlogSession(UdPyBlogEntity):
-    legit = True
-    session = db.StringProperty(required = True)
-    redirect = db.TextProperty(required = True)
 
 class UdPyBlogUser(UdPyBlogEntity):
     legit = True
@@ -91,14 +92,6 @@ class UdPyBlogPostComment(UdPyBlogEntity):
         defaults.update(attributes)
         return UdPyBlogEmptyModel(defaults)
 
-
-#class UdPyBlogCategory(db.Model):
-#    category = db.StringProperty(required = True)
-#    created = db.DateTimeProperty(auto_now_add = True)
-#    @property
-#    def posts(self):
-#        return UdPyBlogPost.gql("WHERE categories = :1", self.key())
-
 class UdPyBlogPostLikes(db.Model):
     legit = True
     post = db.ReferenceProperty(
@@ -141,6 +134,7 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         try:
             # Dispatch the request.
             webapp2.RequestHandler.dispatch(self)
+
         finally:
             # Save all sessions.
             self.session_store.save_sessions(self.response)
@@ -148,7 +142,7 @@ class UdPyBlogHandler(webapp2.RequestHandler):
     @webapp2.cached_property
     def session(self):
         # Returns a session using the default cookie key.
-        return self.session_store.get_session()
+        return self.session_store.get_session(backend='memcache')
 
     def write(self, *a, **kw):
         self.response.out.write(*a, **kw)
@@ -180,8 +174,17 @@ class UdPyBlogHandler(webapp2.RequestHandler):
 
     def auth(self):
         logging.info("+++++++++++ 1")
-        if self.logout:
-            return
+#        if self.logout:
+#            return
+
+        try:
+            logging.info("+++++++++++ XXXXXXXXXXXXXXXX")
+            if not self.session.get("created"):
+                self.session["created"] = time.time()
+            logging.info("+++++++++++ YYYYYYYYYYYYYYYYYY")
+        except:
+            logging.info(sys.exc_info())
+            self.error(500)
 
         logging.info("+++++++++++ 2")
         if self.user:
@@ -209,9 +212,17 @@ class UdPyBlogHandler(webapp2.RequestHandler):
                 if not self.restricted:
                     logging.info("+++++++++++ 9")
                     return
+
         if not self.restricted:
             logging.info("+++++++++++ 10")
             return
+
+
+        # if something goes wrong and we are on the way to log out, no redir
+        # logout handler will kill all
+        if self.logout:
+            return
+
 
         logging.info("+++++++++++ 11")
         # store the original url in order to redirect on success!
@@ -243,27 +254,63 @@ class UdPyBlogHandler(webapp2.RequestHandler):
             gs_bucket_name=bucket
         )
 
-    def process_images(self, content, post_key):
-        return
-        logging.info("checking fo r " + str(post_key));
+    def purge_images(self, post=None):
+        """
+        This function should be triggered by new/update post post requests.
+        It assigns uploaded images as detected in the content to the
+        post_id in the parameter and deletes all the remaining images
+        """
 
-        images = re.findall("encoded_gs_file:[a-zA-Z0-9]+",content)
-        images_mapped = []
-        for image_mapped in UdPyBlogImage.all().filter('post_key =', str(post_key)):
-            images_mapped.append(image_mapped)
+        if post:
+            logging.info("checking for {}".format(post.key()));
 
-        images_dropped = list(set(images_mapped) - set(images))
-        logging.info("RRemoving " + ",".join(images_dropped))
+            images_stored = UdPyBlogImage.all().filter('user =', self.user.key())
+            images_check = []
+            for image in images_stored:
+                if post.cover_image and post.cover_image.blob_key.key() == image.blob_key.key():
+                    logging.info("Skipping cover image...");
+                    continue
+
+                if not image.post or image.post.key() == post.key():
+                    images_check.append(str(image.blob_key.key()))
+
+            images = re.findall("encoded_gs_file:[a-zA-Z0-9]+",post.content)
+
+            if images:
+                logging.info("Post references {} images: {}".format(len(images),images));
+            else:
+                images = []
+
+            logging.info("Images found that are related to this post or not yet to any: {}".format(images_check));
+            images_dropped = list(set(images_check) - set(images))
+
+        else:
+            images_stored = UdPyBlogImage.all().filter('user =', self.user.key()).filter('post =', None)
+            images_dropped = []
+            for image in images_stored:
+                images_dropped.append(str(image.blob_key.key()))
+
+        logging.info("Purging {} unmapped images. ({}...)".format(len(images_dropped),images_dropped[0:3]))
 
         for image in images_dropped:
-            for image_placed in UdPyBlogImage.filter('blob_key = ', image):
+            logging.info("KEY::::::::::{}:::::".format(image))
+            for image_placed in UdPyBlogImage.all().filter('blob_key = ', image):
+                logging.info("Purging {}".format(image_placed.blob_key.key()))
+                blob_info = blobstore.BlobInfo.get(image_placed.blob_key.key())
+                blob_info.delete()
                 image_placed.delete()
 
-        for image in images:
-            logging.info("Adding image " + image)
-            image_placed = UdPyBlogImage.all().filter('blob_key = ', image).get()
-            image_placed.post_key = str(post_key)
-            image_placed.put()
+        if post:
+            for blob_key in images:
+                try:
+                    logging.info("Adding image " + blob_key)
+                    image_placed = UdPyBlogImage.all().filter('blob_key = ', blob_key).get()
+                    image_placed.post_key = post.key()
+                    image_placed.put()
+                except:
+                    logging.info(sys.exc_info())
+                    self.error(500)
+
 
 class UdPyBlogImageUploadPrepareHandler(blobstore_handlers.BlobstoreUploadHandler, UdPyBlogHandler):
     def get(self):
@@ -276,6 +323,7 @@ class UdPyBlogImageUploadHandler(blobstore_handlers.BlobstoreUploadHandler, UdPy
     def post(self):
         self.auth()
         try:
+            logging.info("_________________________________________________________")
             upload = self.get_uploads()[0]
             uploaded_image = UdPyBlogImage(
                 session=self.request.cookies["session"],
@@ -290,6 +338,9 @@ class UdPyBlogImageUploadHandler(blobstore_handlers.BlobstoreUploadHandler, UdPy
             )
 
         except:
+            logging.info("_________________________________________________________")
+            logging.info(self.request.cookies)
+            logging.info(sys.exc_info())
             self.error(500)
 
 class UdPyBlogImageViewHandler(blobstore_handlers.BlobstoreDownloadHandler, UdPyBlogHandler):
@@ -350,8 +401,18 @@ class UdPyBlogSignupHandlerLogout(UdPyBlogHandler):
     restricted = False
     def get(self):
         self.auth()
+        if self.user:
+            self.purge_images()
+
+        self.session.clear()
         self.response.headers.add_header("Set-Cookie", str("%s=%s; path=/" % ( "session","" ) ) )
-        self.response.headers.add_header("Set-Cookie", str("%s=%s; path=/" % ( "access","" ) ) )
+
+        if "access" in self.request.cookies:
+            self.response.headers.add_header(
+                "Set-Cookie",
+                str("%s=%s; path=/" % ( "access","" ) )
+            )
+
         if not self.user:
             self.redirect_prefixed("")
             return
@@ -382,7 +443,7 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
                 logging.info("(((((((((((((((( BAD UUUUUUUUSER <<<<")
 
             if self.session["redirect"]:
-                redirect_url = self.session["redirect"]
+                redirect_url = self.session.get("redirect")
                 self.session["redirect"] = ""
                 self.redirect(redirect_url)
                 return
@@ -413,8 +474,8 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
         logging.info("<><><>>>>>> 7 <<<<><><><>>>>>>>")
         if "redirect" in self.session:
             logging.info("<><><>>>>>> 8 <<<<><><><>>>>>>>")
-            logging.info(" <| <| <|  <|  <|  <|  <|  <|  <|  <|  <|  <| REDIREC SET: " + self.session["redirect"])
-            redirect_url = self.session["redirect"]
+            logging.info(" <| <| <|  <|  <|  <|  <|  <|  <|  <|  <|  <| REDIREC SET: " + self.session.get("redirect"))
+            redirect_url = self.session.get("redirect")
             self.session["redirect"] = ""
             self.redirect(redirect_url)
             return
@@ -575,10 +636,10 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                     cover_image_key = self.args["cover_image"].key()
 
                 post = UdPyBlogPost(
-                    subject = self.request.get("subject"),
-                    summary = self.request.get("summary"),
+                    subject = self.args["subject"],
+                    summary = self.args["summary"],
                     cover_image = cover_image_key,
-                    content = UdPyBlog.sanitize_post(self.request.get("content")),
+                    content = UdPyBlog.sanitize_post(self.args["content"]),
                     user = self.user
                 )
             else:
@@ -603,6 +664,9 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
             if self.args["cover_image"]:
                 self.args["cover_image"].post = post.key()
                 self.args["cover_image"].put()
+
+            logging.info("Purging orphaned upload images...")
+            self.purge_images(post)
 
             blog_entity_context = {
                 "post_id": post.key().id(),
@@ -940,12 +1004,14 @@ class UdPyBlogSignupHandlerLogin(UdPyBlogSignupHandler):
                         "Blog-Entity-Context",
                         json.dumps(blog_entity_context)
                     )
-                    if 'redirect' in self.session and self.session['redirect']:
-                        redirect_url = str(self.session['redirect'])
+                    if 'redirect' in self.session and self.session.get("redirect"):
+                        redirect_url = str(self.session.get("redirect"))
                         self.session['redirect'] = None
                         self.redirect(redirect_url)
                         return
 
+                    self.user = user
+                    self.purge_images()
                     self.redirect_prefixed("")
                     return
             else:

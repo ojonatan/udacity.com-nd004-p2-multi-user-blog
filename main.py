@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*
+
+"""UdPyBlog: Multi User Blog APP"""
+
 import os
 import jinja2
 import hashlib
@@ -12,7 +17,7 @@ from udpyblog import *
 
 config = {}
 config['webapp2_extras.sessions'] = {
-    'secret_key': 'dfs8df7sdkljjlkj',
+    'secret_key': 'dfs8df7sdkljjlkj'
 }
 
 config['udpyblog'] = {

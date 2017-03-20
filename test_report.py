@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*
+
+"""Formatting UdPyBlog Tests from JSON files"""
+
 import os
 import textwrap
 import json
@@ -156,7 +161,7 @@ def generate_summary(reports):
             for assertion_id in reports[test_case]["tests"][scenario_id]["assertions"]:
                 assertion = reports[test_case]["tests"][scenario_id]["assertions"][assertion_id]
                 summary[test_case]["subs"][scenario_id]["subs"][assertion_id] = {
-                    "text": assertion["assertion"],
+                    "text": "[{}] {}".format(assertion["type"],assertion["assertion"]),
                     "status": assertion["status"],
                     "level": 2,
                     "score": "",

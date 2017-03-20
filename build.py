@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*
 
-"""Generating/updating project related files"""
+"""Generating/updating project related files. Running tests."""
 
 import hashlib
 import re

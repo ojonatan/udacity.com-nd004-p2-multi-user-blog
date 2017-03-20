@@ -1,8 +1,15 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*
+
+"""UdPyBlog Tests"""
+
 from webtest import TestApp
 import unittest
 from main import app
 from google.appengine.ext import testbed
 from google.appengine.api import memcache, apiproxy_stub_map, datastore_file_stub
+from google.appengine.api.app_identity import app_identity_stub
+
 from google.appengine.ext import db
 import string
 import random
@@ -262,7 +269,10 @@ class TestUdPyBlog(ExpectingTestCase):
             use_sqlite=True
         )
         self.tools = TestUdPyBlogTools()
+        self.testbed.init_blobstore_stub()
         self.testbed.init_memcache_stub()
+        self.testbed.init_app_identity_stub()
+
         self.results = {}
         self.testcase = None
 

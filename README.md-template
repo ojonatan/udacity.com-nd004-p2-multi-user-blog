@@ -15,17 +15,19 @@ Files - images - require some maintenance work per request.
 
 ## TODO
 
-* Kill bug invalidating upload url when working with cover and content images
-* Implement cleanup strategy to remove orphaned blobs without damaging blop posts in progress
+* Implement cleanup strategy to remove orphaned BLOBS on expiry
 * Add markup/ CSS to make the blog appear in shape
-* EXTRA Maybe add some testing scenarios for redirects and comments
+* Maybe add some testing scenarios for redirects and comments
 * EXTRA pagination!
 
 ## Live URL
 
 https://udacity-160512.appspot.com/blog
 
-## Installation
+## Installation (development only)
+
+This is only required if you want to work with the sources. Grunt is used to do CSS processing and
+filewatching. ```dist/``` contains the static files that get deployed.
 
 ```
 npm install
