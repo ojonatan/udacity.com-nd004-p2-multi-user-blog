@@ -439,7 +439,7 @@ class TestUdPyBlog(ExpectingTestCase):
         self._run_tests("test_107_update_blog_post_and_verify_changes")
 
     def test_108_redirect_to_protected_url_after_captive_login_success(self):
-        """Redirect to protected URL after successful login using the captive Portal"""
+        """Redirect to protected URL after successful login using the captive login form"""
         self._run_tests("test_108_redirect_to_protected_url_after_captive_login_success")
 
     def _run_tests(self, testcase):
@@ -546,13 +546,19 @@ class TestUdPyBlog(ExpectingTestCase):
                         status=scenario["request"]["code"]
 
                     logging.info(">>>>>>>>>>>>>>>>>>expecting  " + str(status))
+                    expect_errors = False
+                    if "expect_errors" in scenario:
+                        expect_errors = scenario["expect_errors"]
+
                     response = self.app.post(
                         scenario["request"]["url"],
                         self._prepare_data(scenario["data"]),
-                        status=status
+                        status=status,
+                        expect_errors=expect_errors
                     )
-                    logging.info("returning " + str(response.status_code))
-                    logging.info(response.headers)
+
+                logging.info("returning " + str(response.status_code))
+                logging.info(response.headers)
 
                 if "Blog-Entity-Context" in dict(response.headers):
 

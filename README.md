@@ -56,17 +56,17 @@ The create blog post form is there and ready for input                2/ 0/ 0/ 2
 
                                                                       +/ -/ O/ #
 --------------------------------------------------------------------------------
-Redirect to protected URL after successful login using the            1/ 1/ 0/ 2
-captive Portal
+Redirect to protected URL after successful login using the            2/ 0/ 0/ 2
+captive login form
 --------------------------------------------------------------------------------
  .. Enforcing login                                                   1/ 0/ 0/ 1
     > [in] data-blog-form="post-login"                                OK
 
- .. Login with <<{username}>> works                                   0/ 1/ 0/ 1
-    > [in]  data-blog-form="post-post-create"                         FAIL
+ .. Login with <<{username}>> works                                   1/ 0/ 0/ 1
+    > [in]  data-blog-form="post-post-create"                         OK
 
 --------------------------------------------------------------------------------
-                                                         Test Results:FAIL
+                                                         Test Results:OK
 
                                                                       +/ -/ O/ #
 --------------------------------------------------------------------------------
@@ -165,10 +165,11 @@ Post too short input for a blog post and see 3 errors                 2/ 0/ 0/ 2
 
                                                                       +/ -/ O/ #
 --------------------------------------------------------------------------------
-Users can only like/unlike posts from authors other then              5/ 0/ 1/ 6
+Users can only like/unlike posts from authors other then              6/ 0/ 0/ 6
 themselves
 --------------------------------------------------------------------------------
- .. Liking an own blog post                                           0/ 0/ 0/ 0
+ .. Liking an own blog post                                           1/ 0/ 0/ 1
+    > [in]  data-blog-error                                           OK
 
  .. Signup works                                                      2/ 0/ 0/ 2
     > [in]  data-blog-control="get-post-create"                       OK
@@ -197,7 +198,7 @@ themselves
     > [in]  data-blog-control="get-logout"                            OK
 
 --------------------------------------------------------------------------------
-                                                         Test Results:FAIL
+                                                         Test Results:OK
 
                                                                       +/ -/ O/ #
 --------------------------------------------------------------------------------
@@ -247,15 +248,15 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
     > [in]  data-blog-control="get-post-update"                       OK
     > [re]  data-blog-content-                                        OK
     > element="subject"[^>]*>\s*TestSubjectUPDATE: TestPost:
-    > GagV07PaIaVjw0HI1ATU\s*<
+    > Obu4qpxsagT2bvJiSk8b\s*<
     > [re]  data-blog-content-                                        OK
     > element="summary"[^>]*>\s*TestSummaryUPDATE:
     > TestSummary:
-    > PU9wzIOVZXqySHhe2Za2n2PlwfKLiV0b6CSL9ESgBYMTOj9QeQ\s*<
+    > BX0C978er8XVHMizN7uCMzJJLi9lXlyCWVohPTHu5dUd3henwG\s*<
     > [re]  data-blog-content-                                        OK
     > element="content"[^>]*>\s*TestContentUPDATE:
     > TestContent:
-    > H3KU0oFpx3tpgJd15nNzlsyZ0TABmOBd6kH3k7macm2646sJxO\s*<
+    > dxI273L9nJOiwHM761P8BFVCPIOIhHx5sX4yWowJWI23H6glua\s*<
     > [in]  data-blog-control="get-logout"                            OK
 
  .. Blog post creation: Paste a perfectly ok blog post, but           6/ 0/ 0/ 6
@@ -272,17 +273,17 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
 
  .. Post update form is accessible and is fully featured              8/ 0/ 0/ 8
     > [re] <textarea(?!name="content").+name="content"[^>]*>          OK
-    > TestContent: H3KU0oFpx3tpgJd15nNzlsyZ0TABmOBd6kH3k7mac
-    > m2646sJxO<\/textarea>
+    > TestContent: dxI273L9nJOiwHM761P8BFVCPIOIhHx5sX4yWowJW
+    > I23H6glua<\/textarea>
     > [re] <textarea(?!name="summary").+name="summary"[^>]*>          OK
-    > TestSummary: PU9wzIOVZXqySHhe2Za2n2PlwfKLiV0b6CSL9ESgB
-    > YMTOj9QeQ<\/textarea>
+    > TestSummary: BX0C978er8XVHMizN7uCMzJJLi9lXlyCWVohPTHu5
+    > dUd3henwG<\/textarea>
     > [re] <textarea(?!name="summary").+name="summary"[^>]*>          OK
     > ((?!<\/textarea>).+)<\/textarea>
     > [re] <input(?!name="subject").+name="subject"(?!value=          OK
     > ").+value="([^"]+)"
     > [re] <input(?!name="subject").+name="subject"(?!value=          OK
-    > ").+value="TestPost: GagV07PaIaVjw0HI1ATU"
+    > ").+value="TestPost: Obu4qpxsagT2bvJiSk8b"
     > [re] <textarea(?!name="content").+name="content"[^>]*>          OK
     > ((?!<\/textarea>).+)<\/textarea>
     > [in]  data-blog-form="post-post-update"                         OK
@@ -291,13 +292,13 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
  .. Viewing posts signed in working                                   5/ 0/ 0/ 5
     > [re]  data-blog-content-                                        OK
     > element="content"[^>]*>\s*TestContent:
-    > H3KU0oFpx3tpgJd15nNzlsyZ0TABmOBd6kH3k7macm2646sJxO\s*<
+    > dxI273L9nJOiwHM761P8BFVCPIOIhHx5sX4yWowJWI23H6glua\s*<
     > [re]  data-blog-content-                                        OK
     > element="summary"[^>]*>\s*TestSummary:
-    > PU9wzIOVZXqySHhe2Za2n2PlwfKLiV0b6CSL9ESgBYMTOj9QeQ\s*<
+    > BX0C978er8XVHMizN7uCMzJJLi9lXlyCWVohPTHu5dUd3henwG\s*<
     > [re]  data-blog-content-                                        OK
     > element="subject"[^>]*>\s*TestPost:
-    > GagV07PaIaVjw0HI1ATU\s*<
+    > Obu4qpxsagT2bvJiSk8b\s*<
     > [in]  data-blog-control="get-logout"                            OK
     > [in]  data-blog-control="get-post-create"                       OK
 
@@ -320,4 +321,4 @@ later use
 
 ## Version
 
-2017-03-20T20:32:39.878000
+2017-03-20T20:58:40.641000

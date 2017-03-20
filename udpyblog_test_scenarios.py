@@ -269,6 +269,7 @@ scenarios = {
                 'url': '/post',
                 'status': 403
             },
+            'expect_errors': True,
             'reset': False,
             'data': {},
             'assertions': {
@@ -1443,7 +1444,7 @@ tests = {
         ]
     },
     'test_108_redirect_to_protected_url_after_captive_login_success': {
-        'desc': "Redirect to protected URL after successful login using the captive Portal",
+        'desc': "Redirect to protected URL after successful login using the captive login form",
         'scenarios': [
             {
                 "scenario": "get-post-create-out-success",

@@ -177,12 +177,18 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         if not "redirect" in self.session:
             return
 
+        logging.info(">>>>>>>>>>>>>>>>>> Checking for redirection >> {}|{}!!! {}".format(self.session.get("redirect"),self.session["redirect"],rightaway))
         redirect = self.session.get("redirect")
+        logging.info(">>>>>>>>>>>>>>>>>> REEEEEEEEEEEEDIRECT {}".format(redirect))
         self.session["redirect"] = ""
-        if rightaway:
+        if not rightaway:
             return redirect
 
-        self.redirect(redirect)
+        if redirect:
+            self.redirect(redirect)
+            return True
+
+        return False
 
     def auth(self):
         logging.info("+++++++++++ 1")
@@ -488,7 +494,8 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
             post_like.put()
 
 
-        self.get_redirection()
+        if self.get_redirection():
+            return
 
         self.redirect_prefixed("")
         return
@@ -1039,7 +1046,8 @@ class UdPyBlogSignupHandlerLogin(UdPyBlogSignupHandler):
                         json.dumps(blog_entity_context)
                     )
 
-                    self.get_redirection()
+                    if self.get_redirection():
+                        return
 
                     self.user = user
                     self.process_images()
