@@ -15,10 +15,9 @@ Files - images - require some maintenance work per request.
 
 ## TODO
 
-* IMPORTANT Squash a bug causing the 503 error on image upload
-* Implement cleanup strategy to remove orphaned blobs without damaging blog posts in progress
+* Implement cleanup strategy to remove orphaned BLOBS on expiry
 * Add markup/ CSS to make the blog appear in shape
-* EXTRA Maybe add some testing scenarios for redirects and comments
+* Maybe add some testing scenarios for redirects and comments
 * EXTRA pagination!
 
 ## Live URL
@@ -236,15 +235,15 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
     > [in]  data-blog-control="get-post-update"                       OK
     > [re]  data-blog-content-                                        OK
     > element="subject"[^>]*>\s*TestSubjectUPDATE: TestPost:
-    > 8YD87EvtpucgnvWfDL3M\s*<
+    > 3M3DxXrGKB8kxQ21o6S3\s*<
     > [re]  data-blog-content-                                        OK
     > element="summary"[^>]*>\s*TestSummaryUPDATE:
     > TestSummary:
-    > fFpoChOSNpMH0GFG1VYJCFWZUX6HwsQ1s7aZoxP9zEnhCjZKO4\s*<
+    > LLQBx6yv1QTTpsXtTvaoinz2deZiMsiN6qgFu4p8PdqOkwcsIT\s*<
     > [re]  data-blog-content-                                        OK
     > element="content"[^>]*>\s*TestContentUPDATE:
     > TestContent:
-    > x336BpT8HCu4Uky6Qcn9peRYJWeyHpMWI8JhfGM9Fw7PF4QktC\s*<
+    > v2iew4Hutz0ry7YLKAodSq1xcpIHCCMYjDs6a6t9SeEqLYCfYe\s*<
     > [in]  data-blog-control="get-logout"                            OK
 
  .. Blog post creation: Paste a perfectly ok blog post, but           6/ 0/ 0/ 6
@@ -261,17 +260,17 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
 
  .. Post update form is accessible and is fully featured              8/ 0/ 0/ 8
     > [re] <textarea(?!name="content").+name="content"[^>]*>          OK
-    > TestContent: x336BpT8HCu4Uky6Qcn9peRYJWeyHpMWI8JhfGM9F
-    > w7PF4QktC<\/textarea>
+    > TestContent: v2iew4Hutz0ry7YLKAodSq1xcpIHCCMYjDs6a6t9S
+    > eEqLYCfYe<\/textarea>
     > [re] <textarea(?!name="summary").+name="summary"[^>]*>          OK
-    > TestSummary: fFpoChOSNpMH0GFG1VYJCFWZUX6HwsQ1s7aZoxP9z
-    > EnhCjZKO4<\/textarea>
+    > TestSummary: LLQBx6yv1QTTpsXtTvaoinz2deZiMsiN6qgFu4p8P
+    > dqOkwcsIT<\/textarea>
     > [re] <textarea(?!name="summary").+name="summary"[^>]*>          OK
     > ((?!<\/textarea>).+)<\/textarea>
     > [re] <input(?!name="subject").+name="subject"(?!value=          OK
     > ").+value="([^"]+)"
     > [re] <input(?!name="subject").+name="subject"(?!value=          OK
-    > ").+value="TestPost: 8YD87EvtpucgnvWfDL3M"
+    > ").+value="TestPost: 3M3DxXrGKB8kxQ21o6S3"
     > [re] <textarea(?!name="content").+name="content"[^>]*>          OK
     > ((?!<\/textarea>).+)<\/textarea>
     > [in]  data-blog-form="post-post-update"                         OK
@@ -280,13 +279,13 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
  .. Viewing posts signed in working                                   5/ 0/ 0/ 5
     > [re]  data-blog-content-                                        OK
     > element="content"[^>]*>\s*TestContent:
-    > x336BpT8HCu4Uky6Qcn9peRYJWeyHpMWI8JhfGM9Fw7PF4QktC\s*<
+    > v2iew4Hutz0ry7YLKAodSq1xcpIHCCMYjDs6a6t9SeEqLYCfYe\s*<
     > [re]  data-blog-content-                                        OK
     > element="summary"[^>]*>\s*TestSummary:
-    > fFpoChOSNpMH0GFG1VYJCFWZUX6HwsQ1s7aZoxP9zEnhCjZKO4\s*<
+    > LLQBx6yv1QTTpsXtTvaoinz2deZiMsiN6qgFu4p8PdqOkwcsIT\s*<
     > [re]  data-blog-content-                                        OK
     > element="subject"[^>]*>\s*TestPost:
-    > 8YD87EvtpucgnvWfDL3M\s*<
+    > 3M3DxXrGKB8kxQ21o6S3\s*<
     > [in]  data-blog-control="get-logout"                            OK
     > [in]  data-blog-control="get-post-create"                       OK
 
@@ -309,4 +308,4 @@ later use
 
 ## Version
 
-2017-03-20T13:22:58.312000
+2017-03-20T13:44:47.572000
