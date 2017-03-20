@@ -14,10 +14,9 @@ The blog features rich media content powered by jQuery Plugins. Hooks on log in/
 
 ## TODO
 
-* interpolate test descriptions agains data dict
 * Add markup/ CSS to make the blog appear in shape
-* Maybe add some testing scenarios for redirects and comments
 * EXTRA pagination!
+* EXTRA Maybe add some testing scenarios for redirects and comments
 
 ## Live URL
 

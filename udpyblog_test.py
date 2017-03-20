@@ -66,13 +66,16 @@ class ExpectingTestCase(unittest.TestCase):
         negate = "negate" in scenario and scenario["negate"]
         subtest = 0
 
-        subject = scenario["subject"]
+        test = scenario["subject"]
         if "data" in scenario:
-            subject = scenario["subject"].format(**scenario["data"])
+            test = scenario["subject"].format(**scenario["data"])
+
+        self.results[self.testcase]["tests"][scenario["id"]]["test"] = test
 
         # register assertions
         id = 0
         for type in scenario["assertions"]:
+
             for assertion in scenario["assertions"][type]:
                 self._register_assertion(
                     scenario,
