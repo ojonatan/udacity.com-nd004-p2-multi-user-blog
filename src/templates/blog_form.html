@@ -6,12 +6,12 @@
 		<form id="post-form" data-toggle="validator" role="forms" method="post" data-ready="1" data-blog-form="post-post-create">
 			<div class="form-inline row">
 				<div class="form-group col-xs-12">
-					<h2>new post</h2>
+					<h2>New Post</h2>
 	{% else %}
 		<form id="post-form" data-toggle="validator" role="forms" method="post" data-ready="1" data-blog-form="post-post-update">
 			<div class="form-inline row">
 				<div class="form-group col-xs-12">
-					<h2>update post</h2>
+					<h2>Update Post</h2>
 					<input type="hidden" name="post_id" value="{{ post_id }}" />
 	{% endif %}
 				</div>
@@ -25,7 +25,7 @@
 			<div class="form-inline row">
 				<div class="form-group col-xs-12">
 					<label for="post-subject">Subject*</label><br />
-					<input name="subject" type="text" class="form-control" id="post-subject" data-error="Please enter a subject." placeholder="" value="{{ subject }}" required="required">
+					<input maxlength="{{ config.input_requirements.subject.max }}" name="subject" type="text" class="form-control" id="post-subject" data-error="Please enter a subject." placeholder="" value="{{ subject }}" required="required">
 					<div class="help-block with-errors error-subject" data-blog-error="subject">{{ error_subject }}</div>
 				</div>
 			</div>
@@ -57,22 +57,20 @@
 
 			<div class="form-inline row">
 				<div class="form-group col-xs-12">
-					<input type="submit" data-blog-control="post-post-create"/>
+					<button type="submit" class="btn btn-primary" data-blog-control="post-post-create">Submit</button>
+{% if not update %}
+					<a href="{{ url_prefix }}" data-blog-control="get-home"><button class="btn btn-link" type="button" data-blog-control="post-post-create">Cancel</button></a>
+{% else %}
+    				<a href="{{ url_prefix }}post/{{ post_id }}" data-blog-control="get-post-view"><button class="btn btn-link" type="button">Cancel and return to post</button></a>
+{% endif %}
 				</div>
 			</div>
 
 		</form>
 
-{% if not update %}
-    <a href="{{ url_prefix }}" data-blog-control="get-home">Cancel</a> and return to blog<br>
-{% else %}
-    <a href="{{ url_prefix }}post/{{ post_id }}" data-blog-control="get-post-view">Cancel</a> and return to post<br>
-{% endif %}
+{% endblock %}
 
-<script src="/bower_components/jquery/dist/jquery.min.js"></script>
-<script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+{% block js %}
 <script src="/bower_components/bootstrap-fileinput/js/fileinput.js"></script>
 <script src="//cloud.tinymce.com/stable/tinymce.min.js"></script>
-<script src="/js/main.js"></script>
-
 {% endblock %}

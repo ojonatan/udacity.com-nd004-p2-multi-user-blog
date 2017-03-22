@@ -1,4 +1,35 @@
+function equalize_height(c_ITEMS) {
+
+	var i_tallest = 0;
+	var c_stack = [];
+
+	var b_single = ($('article').get(0).clientWidth == $('article').first().parent().get(0).clientWidth);
+	c_ITEMS.each(function(i,article) {
+		$(article).height("auto");
+		if($(article).outerHeight(true) > i_tallest) {
+			i_tallest = $(article).outerHeight(true);
+		}
+	});
+	c_ITEMS.height(
+		!b_single ?
+			i_tallest
+			:
+			"auto"
+	);
+
+}
+
 $(document).ready(function(){
+	if($('#post-form').length){
+		return initBlogForm();
+	}
+
+	if($('#main').length){
+		return initBlogMain();
+	}
+});
+
+function initBlogForm(){
 	upload_urls = []
 	$('#post-form').on(
 		'submit',
@@ -231,4 +262,10 @@ $(document).ready(function(){
 			]
 		}
 	);
-});
+}
+function initBlogMain(){
+	$(window).resize(function(){
+		equalize_height($('.post'));
+	});
+	$(window).resize();
+}

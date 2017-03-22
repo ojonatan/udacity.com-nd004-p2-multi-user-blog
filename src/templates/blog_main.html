@@ -2,45 +2,60 @@
 
 {% block content %}
 
-	<div class="container-fluid">
+	<div id="main" class="container-fluid">
 		<div class="row">
+
 	{% for post in posts.order('-created') %}
 			<article class="post col-xs-12 col-sm-6">
+				<div class="well">
+					<span class="post-date">{{ post.get_fancy_date()  }}</span>
+					<h4 class="post-subject">{{ post.subject }}</h4>
+					<div class="post-cover-summary">
+						<div class="post-cover-options">
+							<a href="{{ url_prefix }}post/{{ post.key().id() }}">
+								<div class="post-cover-image-wrapper">
+									<div
+										class="post-cover-image"
 		{% if post.cover_image %}
-		        <div class="post-cover-image" style="background-image: url({{ image_url_prefix }}{{ post.cover_image.blob_key.key() }})">
-		        </div>
-		{% else %}
-		        <div class="post-cover-image">
-		        </div>
+										style="background-image: url({{ image_url_prefix  }}{{ post.cover_image.blob_key.key()  }})"
 		{% endif %}
-				<div class="post-header">
-					<div class="post-date">{{ post.get_fancy_date() }}</div>
-					<h4>{{post.subject}}</h4>
-				</div>
-
-				<br class="clearer">
-
-				<div class="post-author">by {{post.user.username}}</div>
-
-				<div class="post-summary">{{post.summary}}</div>
-		{% if not user.legit or post.user.key() != user.key() %}
-				<form action="{{url_prefix}}post/{{post.key().id()}}/like" method="post" data-blog-form="post-post-like">
-			{% if user.legit and user.liked_posts.filter('post = ',post.key()).count() == 1 %}
-					<button type="submit" class="post-un-like-button" data-blog-control="post-unlike">{{ post.get_likes_count() }}</button>
-			{% else %}
-					<button type="submit" class="post-like-button" data-blog-control="post-like">{{ post.get_likes_count() }}</button>
+								>
+									</div>
+								</div>
+							</a>
+							<form action="{{ url_prefix }}post/{{ post.key().id() }}/like" method="post" data-blog-form="post-post-like">
+		{% if user.legit and user.liked_posts.filter('post = ',post.key()).count() == 1 %}
+								<button
+									type="submit"
+									class="post-un-like-button button-icon button-icon button-icon-un-like"
+									data-blog-control="post-unlike"
+			{% if user.legit and post.user.key() == user.key() %}
+									disabled="disabled"
 			{% endif %}
-				</form>
+								>{{ post.get_likes_count() }}</button>
+		{% else %}
+								<button
+									type="submit"
+									class="post-like-button button-icon button-icon-like"
+									data-blog-control="post-like"
+			{% if user.legit and post.user.key() == user.key() %}
+									disabled="disabled"
+			{% endif %}
+								>{{ post.get_likes_count()  }}</button>
 		{% endif %}
-
-				<a href="{{url_prefix}}post/{{post.key().id()}}#comments" class="post-comments" data-blog-control="get-post-comment">{{ post.get_comments_count() }}</a>
-
-				<a href="{{url_prefix}}post/{{post.key().id()}}" data-blog-control="get-post-view">read more</a><br>
-
+							</form>
+							<a href="{{ url_prefix }}post/{{ post.key().id() }}#comments" class="post-button-wrapper" data-blog-control="get-post-comment">
+								<button type="button" class="post-comments button-icon button-icon-comments">{{ post.get_comments_count() }} Comments</button>
+							</a>
+						</div><span class="post-author">by {{ post.user.username }}</span><br>
+						<span class="post-summary">{{ post.get_summary() }}</span><br>
+						<a href="{{ url_prefix }}post/{{ post.key().id() }}" data-blog-control="get-post-view"><button type="button" class="button-icon button-icon-more">read more</button></a>
+					</div>
+				</div>
 			</article>
 	{% endfor %}
 		</div>
 		<div class="row">
-			<a href="{{url_prefix}}newpost" data-blog-control="get-post-create">new post!!</a>
+			<a href="{{ url_prefix }}newpost" data-blog-control="get-post-create">new post!!</a>
 		</div>
 {% endblock %}

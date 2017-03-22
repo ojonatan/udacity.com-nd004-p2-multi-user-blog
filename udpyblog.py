@@ -54,7 +54,7 @@ class UdPyBlogUser(UdPyBlogEntity):
     lastlog = db.DateTimeProperty(auto_now_add = True)
 
     def get_fancy_date(self):
-        return self.created.strftime(UdPyBlog.post_date_template)
+        return self.created.strftime(UdPyBlog.config["post_date_template"])
 
     @classmethod
     def empty(cls):
@@ -70,20 +70,23 @@ class UdPyBlogPost(UdPyBlogEntity):
     legit = True
     subject = db.StringProperty(required = True)
     cover_image = db.ReferenceProperty(required = False)
-    summary = db.StringProperty(required = True)
+    summary = db.StringProperty(required = True, multiline = True)
     content = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
     categories = db.ListProperty(db.Key)
     user = db.ReferenceProperty(UdPyBlogUser, collection_name='posts')
 
     def get_fancy_date(self):
-        return self.created.strftime(UdPyBlog.post_date_template)
+        return self.created.strftime(UdPyBlog.config["post_date_template"])
 
     def get_likes_count(self):
         return self.users_who_like.count()
 
     def get_comments_count(self):
         return self.comments.count()
+
+    def get_summary(self):
+        return re.sub(r"\r?\n","<br>",self.summary)
 
 
 class UdPyBlogPostComment(UdPyBlogEntity):
@@ -108,7 +111,7 @@ class UdPyBlogPostComment(UdPyBlogEntity):
         return UdPyBlogEmptyModel(defaults)
 
     def get_fancy_date(self):
-        return self.created.strftime(UdPyBlog.post_date_template)
+        return self.created.strftime(UdPyBlog.config["post_date_template"])
 
 class UdPyBlogPostLikes(db.Model):
     legit = True
@@ -125,7 +128,7 @@ class UdPyBlogPostLikes(db.Model):
     created = db.DateTimeProperty(auto_now_add = True)
 
     def get_fancy_date(self):
-        return self.created.strftime(UdPyBlog.post_date_template)
+        return self.created.strftime(UdPyBlog.config["post_date_template"])
 
 class UdPyBlogImage(db.Model):
     legit = True
@@ -140,7 +143,7 @@ class UdPyBlogImage(db.Model):
     created = db.DateTimeProperty(auto_now_add = True)
 
     def get_fancy_date(self):
-        return self.created.strftime(UdPyBlog.post_date_template)
+        return self.created.strftime(UdPyBlog.config["post_date_template"])
 
 class UdPyBlogHandler(webapp2.RequestHandler):
     signup = False
@@ -182,17 +185,18 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         self.response.out.write(*a, **kw)
 
     def url_prefixed(self, fragment):
-        return self.request.scheme + "://" + self.request.host + UdPyBlog.blog_prefix + fragment
+        return self.request.scheme + "://" + self.request.host + UdPyBlog.config["blog_prefix"] + fragment
 
     def redirect_prefixed(self, fragment, code=None):
-        self.redirect(UdPyBlog.blog_prefix + fragment, code=code)
+        self.redirect(UdPyBlog.config["blog_prefix"] + fragment, code=code)
 
     def render_str(self, template_file, **params):
         params = params or {}
-        params["image_url_prefix"] = self.url_prefixed(UdPyBlog.image_view_url_part)
+        params["image_url_prefix"] = self.url_prefixed(UdPyBlog.config["image_view_url_part"])
         params["login_page"] = self.login
         params["signup_page"] = self.signup
-        params["url_prefix"] = UdPyBlog.blog_prefix
+        params["url_prefix"] = UdPyBlog.config["blog_prefix"]
+        params["config"] = UdPyBlog.config
         params["user"] = UdPyBlogUser.empty()
         if self.user:
             params["user"] = self.user
@@ -427,7 +431,7 @@ class UdPyBlogImageUploadHandler(blobstore_handlers.BlobstoreUploadHandler, UdPy
             uploaded_image.put()
             self.render_json(
                 {
-                  "location": self.url_prefixed('%s%s' % (UdPyBlog.image_view_url_part, upload.key()))
+                  "location": self.url_prefixed('%s%s' % (UdPyBlog.config["image_view_url_part"], upload.key()))
                 }
             )
 
@@ -860,7 +864,7 @@ class UdPyBlogPostUpdateHandler(UdPyBlogPostHandler):
                         "content": post.content,
                         "post_id": post_id,
                         "update": self.update,
-                        "cover_image_url": post.cover_image and self.url_prefixed("{0}{1}".format(UdPyBlog.image_view_url_part,post.cover_image.blob_key.key())),
+                        "cover_image_url": post.cover_image and self.url_prefixed("{0}{1}".format(UdPyBlog.config["image_view_url_part"],post.cover_image.blob_key.key())),
                         "upload_url": self.get_image_upload_url(),
                         "upload_url_source": self.url_prefixed("image/upload_url")
                     }
@@ -1150,7 +1154,7 @@ class UdPyBlogPostCleanUpHandler(UdPyBlogTaskHandler):
                         +
                         datetime.timedelta(
                             seconds=(
-                                UdPyBlog.blob_expiry_seconds * -1
+                                UdPyBlog.config["blob_expiry_seconds"] * -1
                             )
                         )
                     )
@@ -1261,6 +1265,7 @@ class UdPyBlog():
         ('_cleanup', UdPyBlogPostCleanUpHandler) # featured by cron
     ]
 
+    config = {}
     regexp = {
         "username": r"[a-zA-Z0-9_-]+",
         "email": r"[\S]+@[\S]+\.[\S]",
@@ -1285,11 +1290,11 @@ class UdPyBlog():
         },
         "summary": {
             "min": 10,
-            "max": 500
+            "max": 250
         },
         "subject": {
             "min": 6,
-            "max": 500
+            "max": 80
         },
         "content": {
             "min": 10,
@@ -1300,25 +1305,25 @@ class UdPyBlog():
     def prepare(cls, config = None):
         if config:
             if "template_folder" in config:
-                cls.template_folder = config["template_folder"]
+                cls.config["template_folder"] = config["template_folder"]
 
             if "blog_prefix" in config:
-                cls.blog_prefix = config["blog_prefix"]
+                cls.config["blog_prefix"] = config["blog_prefix"]
 
             if "forbidden_tags" in config:
-                cls.forbidden_tags = config["forbidden_tags"]
+                cls.config["forbidden_tags"] = config["forbidden_tags"]
 
             if "image_view_url_part" in config:
-                cls.image_view_url_part = config["image_view_url_part"]
+                cls.config["image_view_url_part"] = config["image_view_url_part"]
 
             if "blob_expiry_seconds" in config:
-                cls.blob_expiry_seconds = config["blob_expiry_seconds"]
+                cls.config["blob_expiry_seconds"] = config["blob_expiry_seconds"]
 
             if "post_date_template" in config:
-                cls.blob_expiry_seconds = config["post_date_template"]
+                cls.config["post_date_template"] = config["post_date_template"]
 
             if "input_requirements" in config:
-                cls.input_requirements = cls.merge_dicts(
+                cls.config["input_requirements"] = cls.merge_dicts(
                     cls.input_requirements,
                     config["input_requirements"]
                 )
@@ -1331,7 +1336,7 @@ class UdPyBlog():
 
     @classmethod
     def get_routes(cls):
-        cls.routes.append((UdPyBlog.image_view_url_part + "(.+)",UdPyBlogImageViewHandler))
+        cls.routes.append((UdPyBlog.config["image_view_url_part"] + "(.+)",UdPyBlogImageViewHandler))
         if cls.blog_prefix:
             routes_prefixed = []
             for route in cls.routes:
@@ -1348,11 +1353,11 @@ class UdPyBlog():
             else:
                 return True
 
-        if field in cls.input_requirements:
-            if len(input) < cls.input_requirements[field]["min"]:
+        if field in cls.config["input_requirements"]:
+            if len(input) < cls.config["input_requirements"][field]["min"]:
                 return "Input too short"
 
-            if len(input) > cls.input_requirements[field]["max"]:
+            if len(input) > cls.config["input_requirements"][field]["max"]:
                 return "Input too long"
 
         if field in cls.regexp:
@@ -1372,7 +1377,7 @@ class UdPyBlog():
             if match:
                 content = content.replace(quoted, match.group(1) + self.url_prefixed("image/view") + match.group(0))
 
-        for (tag, replacement) in cls.forbidden_tags:
+        for (tag, replacement) in cls.config["forbidden_tags"]:
             if replacement:
                 replacer = ('<' + tag, '<' + replacement), ('</' + tag + '>', '</' + replacement + '>')
             else:
