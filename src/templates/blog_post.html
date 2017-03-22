@@ -3,31 +3,31 @@
 {% block content %}
 
 <div class="post" data-blog-panel="post">
-    <span style="float: right">{{post.created}}</span>
+    <span style="float: right">{{ post.created }}</span>
     {% if post.cover_image %}
 	<div class="cover-image" style="background-image: url({{ image_url_prefix }}{{ post.cover_image.blob_key.key() }})"></div>
 	{% else %}
 	<div class="cover-image"></div>
 	{% endif %}
-    <h2 data-blog-content-element="subject">{{post.subject}}</h2>
+    <h2 data-blog-content-element="subject">{{ post.subject }}</h2>
 
-	<small data-blog-content-element="summary">{{post.summary}}</small>
+	<small data-blog-content-element="summary">{{ post.summary }}</small>
 
     <hr />
 <!--post-start-->
-    <div style="clear: both;" data-blog-content-element="content">{{post.content}}</div>
+    <div style="clear: both;" data-blog-content-element="content">{{ post.content }}</div>
 <!--post-end-->
-    <div>{{post.user.username}}</div>
+    <div>{{ post.user.username }}</div>
 	<hr>
 	{% if post.comments.count() %}
-	<div class="comment" data-blog-panel="comment">
+	<div class="comment" data-blog-panel="comment" id="comments">
 		{% for comment in post.comments.order('-created') %}
-			<small>{{comment.user.username}} {{comment.created}}</small>
-			<h4>{{comment.subject}}</h4>
-			<p>{{comment.comment}}</p>
+			<small>{{ comment.user.username }} {{ comment.created }}</small>
+			<h4>{{ comment.subject }}</h4>
+			<p>{{ comment.comment }}</p>
 			{% if comment.user.key() == user.key() %}
-			<a href="{{url_prefix}}post/{{post.key().id()}}/comment/{{comment.key().id()}}/edit" data-blog-control="get-comment-update">edit</a>
-			<form action="{{url_prefix}}post/{{post.key().id()}}/comment/{{comment.key().id()}}/delete" data-blog-form="post-comment-delete">
+			<a href="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/edit" data-blog-control="get-comment-update">edit</a>
+			<form action="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/delete" data-blog-form="post-comment-delete">
 				<button type="submit" data-blog-control="post-comment-delete">delete</button>
 			</form>
 			{% endif %}
@@ -42,17 +42,17 @@
 	{% if user %}
 
 		{% if not update %}
-	<form action="{{url_prefix}}post/{{post.key().id()}}/comment" method="post" data-blog-form="comment-form-create">
+	<form action="{{ url_prefix }}post/{{ post.key().id() }}/comment" method="post" data-blog-form="comment-form-create">
 		<h3>new comment</h3>
 		{% else %}
-	<form action="{{url_prefix}}post/{{post.key().id()}}/comment/{{comment.key().id()}}/edit" method="post" data-blog-form="comment-form-update">
+	<form action="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/edit" method="post" data-blog-form="comment-form-update">
 		<h3>update comment</h3>
-		<input type="hidden" name="comment_id" value="{{comment_id}}" />
+		<input type="hidden" name="comment_id" value="{{ comment_id }}" />
 		{% endif %}
 		<div>
 			<label for="subject">Subject</label>
 		</div>
-		<input type="text" name="subject" id="subject" value="{{comment.subject}}" />
+		<input type="text" name="subject" id="subject" value="{{ comment.subject }}" />
 		<span style="color:red" data-blog-error="subject">{{ error_subject }}</span>
 
 
@@ -60,28 +60,30 @@
 			<label for="content">Your comment</label>
 		</div>
 
-		<textarea name="content">{{comment.content}}</textarea>
+		<textarea name="content">{{ comment.content }}</textarea>
 		<span style="color:red" data-blog-error="content">{{ error_content }}</span>
 
-		<div class="error">{{error}}</div>
+		<div class="error">{{ error }}</div>
 		<input type="submit" />
 
 	</form>
 	{% endif %}
 
 	{% if user.legit and post.user.key() == user.key() %}
-<a href="{{url_prefix}}post/{{post.key().id()}}/update" data-blog-control="get-post-update">update post</a><br />
-	{% elif user.legit %}
-<form action="{{url_prefix}}post/{{post.key().id()}}/like" method="post" data-blog-form="post-form-like">
-		{% if user.liked_posts.filter('post = ',post.key()).count() == 1 %}
-<button type="submit" data-blog-control="post-unlike">Unlike!</button>
-		{% else %}
-<button type="submit" data-blog-control="post-like">Like!</button>
-		{% endif %}
-</form>
+<a href="{{ url_prefix }}post/{{ post.key().id() }}/update" data-blog-control="get-post-update">update post</a><br />
 	{% endif %}
 
-<a href="{{url_prefix}}" data-blog-control="get-home">back</a><br />
-<a href="{{url_prefix}}newpost" data-blog-control="get-post-create">new post</a>
+	{% if not user.legit or post.user.key() != user.key() %}
+	<form action="{{url_prefix}}post/{{post.key().id()}}/like" method="post" data-blog-form="post-post-like">
+		{% if user.legit and user.liked_posts.filter('post = ',post.key()).count() == 1 %}
+		<button type="submit" class="post-un-like-button" data-blog-control="post-unlike">{{ post.get_likes_count() }}</button>
+		{% else %}
+		<button type="submit" class="post-like-button" data-blog-control="post-like">{{ post.get_likes_count() }}</button>
+		{% endif %}
+	</form>
+	{% endif %}
+
+<a href="{{ url_prefix }}" data-blog-control="get-home">back</a><br />
+<a href="{{ url_prefix }}newpost" data-blog-control="get-post-create">new post</a>
 
 {% endblock %}

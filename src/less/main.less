@@ -43,6 +43,7 @@ button{
 	min-width: 200px;
 	min-height: 200px;
 	overflow: hidden;
+	background-position: top left;
 }
 
 .file-preview-image {
@@ -66,11 +67,10 @@ button{
 
 @media screen and (max-width: @screen-sm-max) {
 	.post-cover-image {
-		background-position: top center;
 	}
 }
 
-@media screen and (min-width: @screen-sm-min) and (max-width: @screen-md-max) {
+@media screen and (min-width: @screen-lg-min) {
 	.post-summary {
 		font-size: 14px;
 		min-height: 50px;
@@ -82,6 +82,7 @@ button{
 	}
 	
 	.post-cover-image {
+		background-position: top right;
 		display: inline-block;
 		width: 165px;
 		height: 165px;
@@ -99,90 +100,25 @@ button{
 	}
 }
 
-@media screen and (min-width: @screen-lg-min) {
-	.post-summary {
-		font-size: 16px;
-		min-height: 50px;
-	}
 
-	.post-date
-	{
-		text-align: right;
-	}
-	
-	.post-cover-image {
-		display: inline-block;
-		width: 235px;
-		height: 235px;
-		float: left;
-		min-width: 0;
-		min-height: 0;
-	}
-
-	.post-header {
-		padding-left: 10px;
-		display: inline-block;
-		width: 235px;
-		height: 235px;
-		float: right;
-	}
-}
-
-
-.post-cover-image {
-	position: relative;
-	
-	.un-like-button,
-	.like-button {
-		right: 0;
-		background-color: transparent;
-		overflow: hidden;
+.post-un-like-button,
+.post-like-button {
+	padding: 0;
+	border: 0;
+	&:focus,
+	&:active {
+		padding: 0;
 		border: 0;
-		height: 9em;
-		width: 9em;
 	}
 }
 
-.post-cover-image form {
-	right: 0;
-	position: absolute;
-	overflow: hidden;
-	display: inline-block;
+.post-un-like-button:before,
+.post-like-button:before {
+	font-family: FontAwesome;
+	content: "\f08a";
 }
 
-.un-like-button::before,
-.like-button::before {
-	content: '+';
-	text-align: center;
-	color: #7d97ad;
-	position: absolute;
-	height: 1.5em;
-	width: 10em;
-	font-size: 25px;
-	top: 5px;
-	right: -100px;
-	z-index: 100;	
+.post-comments:before {
+	font-family: FontAwesome;
+	content: "\f0e5";
 }
-
-.un-like-button::before {
-	content: '-';
-}
-
-.un-like-button::after,
-.like-button::after {
-	background: green;
-	content: "";
-	box-shadow: 1px 1px 5px rgba(146, 142, 142, 0.5);
-	transform: rotate(45deg);
-	position: absolute;
-	width: 20em;
-	opacity: 0.7;
-	top: -19em;
-	height: 20em;
-	right: -10em;
-}
-
-.un-like-button::after {
-	background: red;
-}
-
