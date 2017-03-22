@@ -30,7 +30,7 @@
 				</div>
 			</div>
 			<div class="form-inline row">
-				<div class="form-group col-xs-6">
+				<div class="form-group col-xs-12 col-sm-12">
 					<label for="post-cover">Cover image*</label><br />
 					<input id="post-cover" type="file" class="form-control-upload" data-preview-file-type="image" data-blog-upload-url-source="{{ upload_url_source }}" accept="image/*" data-blog-upload-url="{{ upload_url }}">
 	{% if cover_image_url %}
@@ -40,7 +40,7 @@
 	{% endif %}
 					<div class="help-block with-errors error-cover" data-blog-error="cover">{{ error_cover_image }}</div>
 				</div>
-				<div class="form-group col-xs-6">
+				<div class="form-group col-xs-12 col-sm-12">
 					<label for="kontakt-nachricht">Summary*</label>
 					<textarea name="summary" class="form-control form-control-textarea" id="post-summary" rows="3" data-error="Please insert a post summary." data-maxlength="2000" required="required">{{ summary }}</textarea>
 					<small class="form-text text-muted">max. 500 characters</small>

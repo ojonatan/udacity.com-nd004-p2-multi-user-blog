@@ -390,7 +390,9 @@ class UdPyBlogHandler(webapp2.RequestHandler):
             for image_placed in UdPyBlogImage.all().filter('blob_key = ', image):
                 logging.info("Purging {}".format(image_placed.blob_key.key()))
                 blob_info = blobstore.BlobInfo.get(image_placed.blob_key.key())
-                blob_info.delete()
+                if blob_info:
+                    blob_info.delete()
+
                 image_placed.delete()
 
         if post:
