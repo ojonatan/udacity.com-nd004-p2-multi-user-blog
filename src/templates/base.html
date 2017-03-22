@@ -36,13 +36,13 @@
 					<!-- Collection of nav links and other content for toggling -->
 					<div id="navbarCollapse" class="collapse navbar-collapse">
 						<ul class="nav navbar-nav">
-							<li><a href="{{ url_prefix }}">Home</a></li>
-							<li><a href="{{ url_prefix }}newpost">New Post</a></li>
+							<li><a href="{{ url_prefix }}" data-blog-control="get-home">Home</a></li>
+							<li><a href="{{ url_prefix }}newpost" data-blog-control="get-post-create">New Post</a></li>
 {% if user.legit %}
-							<li><a class="hidden-sm" href="{{ url_prefix }}logout">Log out</a></li>
+							<li><a class="hidden-sm" href="{{ url_prefix }}logout" data-blog-control="get-logout">Log out</a></li>
 {% else %}
-							<li><a class="hidden-sm" href="{{ url_prefix }}login">Log in</a></li>
-							<li><a class="hidden-sm" href="{{ url_prefix }}signup">Sign up</a></li>
+							<li><a class="hidden-sm" href="{{ url_prefix }}login" data-blog-control="get-login">Log in</a></li>
+							<li><a class="hidden-sm" href="{{ url_prefix }}signup" data-blog-control="get-signup">Sign up</a></li>
 {% endif %}
 						</ul>
 {% if user.legit %}
@@ -61,12 +61,12 @@
 	{% if not login_page %}
 						<form class="navbar-form navbar-right hidden-xs">
 							<div class="form-group">
-								<a href="{{ url_prefix }}signup"><button type="button" class="btn btn-primary">Sign up</button></a>
+								<a href="{{ url_prefix }}signup" data-blog-control="get-signup"><button type="button" class="btn btn-primary">Sign up</button></a>
 							</div>
 						</form>
 						<form class="navbar-form navbar-right hidden-xs">
 							<div class="form-group">
-								<a href="{{ url_prefix }}login"><button type="button" class="btn btn-default">Login</button></a>
+								<a href="{{ url_prefix }}login" data-blog-control="get-login"><button type="button" class="btn btn-default">Login</button></a>
 							</div>
 						</form>
 

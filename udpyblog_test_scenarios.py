@@ -292,8 +292,8 @@ scenarios = {
             'reset': False,
             'data': {},
             'assertions': {
-                'in': [
-                    ' data-blog-control="post-unlike"'
+                're': [
+                    r'\bdata-blog-control="post-unlike"'
                 ]
             },
             'overrides': {}
@@ -308,8 +308,8 @@ scenarios = {
             'reset': False,
             'data': {},
             'assertions': {
-                'in': [
-                    ' data-blog-control="post-like"'
+                're': [
+                    r'\bdata-blog-control="post-like"'
                 ]
             },
             'overrides': {}

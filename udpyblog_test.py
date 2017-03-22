@@ -123,14 +123,14 @@ class ExpectingTestCase(unittest.TestCase):
             if not result:
 
                 self._dump(
-                    re.sub(r'[^a-zA-Z0-9,]','_',subject),
+                    re.sub(r'[^a-zA-Z0-9,]','_',scenario["subject"]),
                     assertion["assertion"],
                     response
                 )
 
                 msg = self._format_error(
                     **{
-                        "msg": subject,
+                        "msg": scenario["subject"],
                         "extra": extra,
                         "assertion": assertion["assertion"],
                         "html": response.body
