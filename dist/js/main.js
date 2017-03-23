@@ -24,7 +24,7 @@ $(document).ready(function(){
 		return initBlogForm();
 	}
 
-	if($('#main').length){
+	if($('article.post').length){
 		return initBlogMain();
 	}
 });

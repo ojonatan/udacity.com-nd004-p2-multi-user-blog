@@ -17,13 +17,14 @@ import json
 import sys
 import cgi
 import time
-
+from paging import PagedQuery
 from webapp2_extras import sessions
 
 from google.appengine.ext import db
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.api import app_identity
+from google.appengine.api import memcache
 
 # Models
 
@@ -611,16 +612,36 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
         return
 
 class UdPyBlogMainHandler(UdPyBlogHandler):
-    def get(self):
+    def get(self, page_id=None):
 
         if not self.auth():
             return
 
-        posts = UdPyBlogPost.all()
+        posts = []
+        posts_query = PagedQuery(UdPyBlogPost.all().order('-created'), UdPyBlog.config["posts_per_page"])
+        pages_total = posts_query.page_count()
+
+        if not page_id:
+            page_id = 1
+        else:
+            page_id = int(page_id)
+
+        posts = posts_query.fetch_page(page_id)
+        page_next=None
+        if pages_total > page_id:
+            page_next = (page_id + 1)
+
+        page_prev=None
+        if page_id > 1:
+            page_prev = (page_id - 1)
+
         self.render(
             "blog_main.html",
             **{
-                "posts": posts
+                "posts": posts,
+                "pages": pages_total,
+                "page_prev": page_prev,
+                "page_next": page_next
             }
         )
 
@@ -1253,6 +1274,7 @@ class UdPyBlog():
 
     routes = [
         ('', UdPyBlogMainHandler),
+        ('page/([0-9]+)', UdPyBlogMainHandler),
         ('signup', UdPyBlogSignupHandler),
         ('logout', UdPyBlogSignupHandlerLogout),
         ('login', UdPyBlogSignupHandlerLogin),
@@ -1270,47 +1292,49 @@ class UdPyBlog():
         ('_cleanup', UdPyBlogPostCleanUpHandler) # featured by cron
     ]
 
-    config = {}
+    config = {
+        "template_folder": "dist/templates",
+        "blog_prefix": "/",
+        "blob_expiry_seconds": (5*24*3600),
+        "static_path_prefix": "",
+        "post_date_template": "%d, %b %Y, %I:%M%p",
+        "comment_date_template": "%d, %b %Y, %I:%M%p",
+        "posts_per_page": 4,
+        "input_requirements": {
+            "email": {
+                "min": 6,
+                "max": 250
+            },
+            "password": {
+                "min": 3,
+                "max": 20
+            },
+            "username": {
+                "min": 3,
+                "max": 20
+            },
+            "summary": {
+                "min": 10,
+                "max": 250
+            },
+            "subject": {
+                "min": 6,
+                "max": 80
+            },
+            "content": {
+                "min": 10,
+                "max": 10000
+            }
+        }
+    }
+
     regexp = {
         "username": r"[a-zA-Z0-9_-]+",
         "email": r"[\S]+@[\S]+\.[\S]",
         "subject": r"[^\r\n\t]"
     }
-
-    template_folder = "dist/templates"
-    blog_prefix = "/"
-    blob_expiry_seconds = (5*24*3600)
-    static_path_prefix = ""
     jinja_env = None
-    post_date_template = "%d, %b %Y, %I:%M%p"
-    comment_date_template = "%d, %b %Y, %I:%M%p"
 
-    input_requirements = {
-        "email": {
-            "min": 6,
-            "max": 250
-        },
-        "password": {
-            "min": 3,
-            "max": 20
-        },
-        "username": {
-            "min": 3,
-            "max": 20
-        },
-        "summary": {
-            "min": 10,
-            "max": 250
-        },
-        "subject": {
-            "min": 6,
-            "max": 80
-        },
-        "content": {
-            "min": 10,
-            "max": 10000
-        }
-    }
     @classmethod
     def prepare(cls, config = None):
         if config:
@@ -1335,25 +1359,28 @@ class UdPyBlog():
             if "comment_date_template" in config:
                 cls.config["comment_date_template"] = config["comment_date_template"]
 
+            if "posts_per_page" in config:
+                cls.config["posts_per_page"] = config["posts_per_page"]
+
             if "input_requirements" in config:
                 cls.config["input_requirements"] = cls.merge_dicts(
-                    cls.input_requirements,
+                    cls.config["input_requirements"],
                     config["input_requirements"]
                 )
 
         cls.template_dir = os.path.join(
             os.path.dirname(__file__),
-            cls.template_folder
+            cls.config["template_folder"]
         )
         cls.jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(cls.template_dir))
 
     @classmethod
     def get_routes(cls):
         cls.routes.append((UdPyBlog.config["image_view_url_part"] + "(.+)",UdPyBlogImageViewHandler))
-        if cls.blog_prefix:
+        if cls.config["blog_prefix"]:
             routes_prefixed = []
             for route in cls.routes:
-                routes_prefixed.append((cls.blog_prefix + route[0],route[1]))
+                routes_prefixed.append((cls.config["blog_prefix"] + route[0],route[1]))
             return routes_prefixed
         else:
             return cls.routes

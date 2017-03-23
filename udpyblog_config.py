@@ -10,6 +10,7 @@ config = {
         "init_pass": "reset all data!",
         "forbidden_tags": [ ('h1','h3'), ('h2','h4'), ('script','p'), ('a','span') ],
         "blob_expiry_seconds": (3600),
+        "posts_per_page": 8,
         "input_requirements": {
             "password": {
                 "min": 3,

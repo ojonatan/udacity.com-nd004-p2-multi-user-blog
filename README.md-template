@@ -14,8 +14,8 @@ The blog features rich media content powered by jQuery Plugins. Hooks on log in/
 
 ## TODO
 
-* Add markup/ CSS to make the blog appear in shape
-* EXTRA pagination!
+* Login stores referrer url even if not in captive mode
+* logout stores referrer url
 * EXTRA Maybe add some testing scenarios for redirects and comments
 
 ## Live URL
@@ -31,6 +31,10 @@ filewatching. ```dist/``` contains the static files that get deployed.
 npm install
 bower install
 ```
+
+## 3rd party work included
+
+From the [```he3-appengine-lib```](https://code.google.com/archive/p/he3-appengine-lib) located under [https://code.google.com/archive/p/he3-appengine-lib] this project makes use of the PagedQuery module. This is licensed under the [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## Test results
 

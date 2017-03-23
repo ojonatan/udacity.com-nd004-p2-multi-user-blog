@@ -25,14 +25,14 @@
 			<div class="form-inline row">
 				<div class="form-group col-xs-12">
 					<label for="post-subject">Subject*</label><br />
-					<input maxlength="{{ config.input_requirements.subject.max }}" name="subject" type="text" class="form-control" id="post-subject" data-error="Please enter a subject." placeholder="" value="{{ subject }}" required="required">
+					<input maxlength="{{ config.input_requirements.subject.max }}" name="subject" type="text" class="form-control" id="post-subject" data-error="Please enter a subject." placeholder="" value="{{ subject }}" required="required" data-blog-content-element="subject">
 					<div class="help-block with-errors error-subject" data-blog-error="subject">{{ error_subject }}</div>
 				</div>
 			</div>
 			<div class="form-inline row">
 				<div class="form-group col-xs-12 col-sm-12">
 					<label for="post-cover">Cover image*</label><br />
-					<input id="post-cover" type="file" class="form-control-upload" data-preview-file-type="image" data-blog-upload-url-source="{{ upload_url_source }}" accept="image/*" data-blog-upload-url="{{ upload_url }}">
+					<input id="post-cover" type="file" class="form-control-upload" data-preview-file-type="image" data-blog-upload-url-source="{{ upload_url_source }}" accept="image/*" data-blog-upload-url="{{ upload_url }}" data-blog-content-element="cover-image">
 	{% if cover_image_url %}
 					<input type="hidden" id="post-cover-url" name="cover_image_url" value="{{ cover_image_url }}">
 	{% else %}
@@ -42,7 +42,7 @@
 				</div>
 				<div class="form-group col-xs-12 col-sm-12">
 					<label for="kontakt-nachricht">Summary*</label>
-					<textarea name="summary" class="form-control form-control-textarea" id="post-summary" rows="3" data-error="Please insert a post summary." data-maxlength="2000" required="required">{{ summary }}</textarea>
+					<textarea name="summary" class="form-control form-control-textarea" id="post-summary" rows="3" data-error="Please insert a post summary." data-maxlength="2000" required="required" data-blog-content-element="summary">{{ summary }}</textarea>
 					<small class="form-text text-muted">max. 500 characters</small>
 					<div class="help-block with-errors error-summary" data-blog-error="summary">{{ error_summary }}</div>
 				</div>

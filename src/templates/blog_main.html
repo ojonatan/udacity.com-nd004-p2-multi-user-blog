@@ -2,10 +2,8 @@
 
 {% block content %}
 
-	<div id="main" class="container-fluid">
 		<div class="row">
-
-	{% for post in posts.order('-created') %}
+	{% for post in posts %}
 			<article class="post col-xs-12 col-sm-6">
 				<div class="well">
 					<span class="post-date">{{ post.get_fancy_date()  }}</span>
@@ -56,6 +54,15 @@
 	{% endfor %}
 		</div>
 		<div class="row">
-			<a href="{{ url_prefix }}newpost" data-blog-control="get-post-create">new post!!</a>
+			<div class="col-xs-6">
+	{% if page_prev %}
+				<a href="{{ url_prefix }}page/{{ page_prev }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link"><i class="icon-position-before icon-arrow-left"></i>Newer Posts</button></a>
+	{% endif %}
+			</div>
+			<div class="col-xs-6" style="text-align: right;">
+	{% if page_next %}
+				<a href="{{ url_prefix }}page/{{ page_next }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link">Older Posts<i class="icon-position-after icon-arrow-right"></i></button></a>
+	{% endif %}
+			</div>
 		</div>
 {% endblock %}
