@@ -38,10 +38,10 @@
 							<li><a href="{{ url_prefix }}" data-blog-control="get-home">Home</a></li>
 							<li><a href="{{ url_prefix }}newpost" data-blog-control="get-post-create">New Post</a></li>
 {% if user.legit %}
-							<li><a class="hidden-sm" href="{{ url_prefix }}logout" data-blog-control="get-logout">Log out</a></li>
+							<li><a class="hidden-sm hidden-md hidden-lg" href="{{ url_prefix }}logout" data-blog-control="get-logout">Log out</a></li>
 {% else %}
-							<li><a class="hidden-sm" href="{{ url_prefix }}login" data-blog-control="get-login">Log in</a></li>
-							<li><a class="hidden-sm" href="{{ url_prefix }}signup" data-blog-control="get-signup">Sign up</a></li>
+							<li><a class="hidden-sm hidden-md hidden-lg" href="{{ url_prefix }}login" data-blog-control="get-login">Log in</a></li>
+							<li><a class="hidden-sm hidden-md hidden-lg" href="{{ url_prefix }}signup" data-blog-control="get-signup">Sign up</a></li>
 {% endif %}
 						</ul>
 {% if user.legit %}

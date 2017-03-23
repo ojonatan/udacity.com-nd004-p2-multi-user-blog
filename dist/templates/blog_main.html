@@ -2,6 +2,22 @@
 
 {% block content %}
 
+	{% if page_prev or page_next %}
+
+		<div class="row">
+			<div class="col-xs-6">
+		{% if page_prev %}
+				<a href="{{ url_prefix }}page/{{ page_prev }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link"><i class="icon-position-before icon-arrow-left"></i>Newer Posts</button></a>
+		{% endif %}
+			</div>
+			<div class="col-xs-6" style="text-align: right;">
+		{% if page_next %}
+				<a href="{{ url_prefix }}page/{{ page_next }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link">Older Posts<i class="icon-position-after icon-arrow-right"></i></button></a>
+		{% endif %}
+			</div>
+		</div>
+
+	{% endif %}
 		<div class="row">
 	{% for post in posts %}
 			<article class="post col-xs-12 col-sm-6">
@@ -53,16 +69,22 @@
 			</article>
 	{% endfor %}
 		</div>
+
+	{% if page_prev or page_next %}
+
 		<div class="row">
 			<div class="col-xs-6">
-	{% if page_prev %}
+		{% if page_prev %}
 				<a href="{{ url_prefix }}page/{{ page_prev }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link"><i class="icon-position-before icon-arrow-left"></i>Newer Posts</button></a>
-	{% endif %}
+		{% endif %}
 			</div>
 			<div class="col-xs-6" style="text-align: right;">
-	{% if page_next %}
+		{% if page_next %}
 				<a href="{{ url_prefix }}page/{{ page_next }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link">Older Posts<i class="icon-position-after icon-arrow-right"></i></button></a>
-	{% endif %}
+		{% endif %}
 			</div>
 		</div>
+
+	{% endif %}
+
 {% endblock %}

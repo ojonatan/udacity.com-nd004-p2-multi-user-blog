@@ -14,8 +14,6 @@ The blog features rich media content powered by jQuery Plugins. Hooks on log in/
 
 ## TODO
 
-* Login stores referrer url even if not in captive mode
-* logout stores referrer url
 * EXTRA Maybe add some testing scenarios for redirects and comments
 
 ## Live URL
