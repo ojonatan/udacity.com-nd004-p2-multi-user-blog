@@ -1184,10 +1184,11 @@ class UdPyBlogPostCleanUpHandler(UdPyBlogTaskHandler):
                 )
             except:
                 logging.info(sys.exc_info())
-            self.code(200)
+
+            self.set_status(200)
             return
 
-        self.code(403)
+        self.error(403)
         return
 
 class UdPyBlogSignupHandlerLogin(UdPyBlogSignupHandler):
