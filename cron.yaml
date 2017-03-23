@@ -1,4 +1,4 @@
 cron:
 - description: blobstore cleanup
-  url: /_cleanup
+  url: /blog/_cleanup
   schedule: every 60 mins
