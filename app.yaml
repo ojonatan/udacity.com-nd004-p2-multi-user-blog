@@ -4,6 +4,10 @@ threadsafe: true
 
 handlers:
 
+- url: /favicon\.ico
+  static_files: dist/img/favicon.ico
+  upload: dist/images/img\.ico
+
 - url: /fonts/(.*\.eot)
   mime_type: application/vnd.ms-fontobject
   static_files: dist/bower_components/bootstrap/fonts/\1
@@ -38,10 +42,6 @@ handlers:
 
 - url: /.*
   script: main.app
-
-- url: /favicon\.ico
-  static_files: dist/img/favicon.ico
-  upload: dist/images/img\.ico
 
 libraries:
 - name: jinja2
