@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div data-blog-error>An error ocurred. We are very sorry. Please start over at <a href="/" data-blog-control="get-home">the home</a> of the blog.</div>
+<div data-blog-error>An error ocurred. We are very sorry. Please start over at <a href="{{ config.blog_prefix }}" data-blog-control="get-home">the home</a> of the blog.</div>
 
 
 {% endblock %}

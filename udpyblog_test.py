@@ -22,6 +22,7 @@ import os
 import logging
 import json
 import copy
+import udpyblog_config
 
 path = os.path.dirname(os.path.realpath(__file__))
 
@@ -535,10 +536,14 @@ class TestUdPyBlog(ExpectingTestCase):
 
             response = None
             if scenario["request"]:
+                url = "{}{}".format(
+                    udpyblog_config.config["udpyblog"]["blog_prefix"],
+                    scenario["request"]["url"]
+                )
                 logging.info("Accessing handler for <<{}>>!".format(scenario["request"]["url"]))
                 if scenario["request"]["method"] == "get":
                     response = self.app.get(
-                        scenario["request"]["url"]
+                        url
                     )
 
                 else:
@@ -554,7 +559,7 @@ class TestUdPyBlog(ExpectingTestCase):
                         expect_errors = scenario["expect_errors"]
 
                     response = self.app.post(
-                        scenario["request"]["url"],
+                        url,
                         self._prepare_data(scenario["data"]),
                         status=status,
                         expect_errors=expect_errors

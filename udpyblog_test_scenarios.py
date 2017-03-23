@@ -7,7 +7,7 @@ scenarios = {
             'subject': 'Signup works',
             'request': {
                 'method': 'post',
-                'url': '/signup'
+                'url': 'signup'
             },
             'reset': True,
             'data': {
@@ -38,7 +38,7 @@ scenarios = {
             'subject': 'Login with <<{username}>> works',
             'request': {
                 'method': 'post',
-                'url': '/login'
+                'url': 'login'
             },
             'reset': True, # reset cookies before execution
             'data': {
@@ -64,7 +64,7 @@ scenarios = {
             'reset': True,
             'request': {
                 'method': 'get',
-                'url': '/'
+                'url': ''
             },
             'assertions': {
                 'in': [
@@ -81,7 +81,7 @@ scenarios = {
             'subject': 'Logout after login works',
             'request': {
                 'method': 'get',
-                'url': '/logout'
+                'url': 'logout'
             },
             'reset': False, # reset cookies before execution
             'assertions': {
@@ -99,7 +99,7 @@ scenarios = {
             'subject': 'Post create form is accessible and is fully featured',
             'request': {
                 'method': 'get',
-                'url': '/newpost'
+                'url': 'newpost'
             },
             'reset': False, # reset cookies before execution
             'assertions': {
@@ -196,7 +196,7 @@ scenarios = {
             'subject': 'Blog post fails: too short input for subject, summary and content',
             'request': {
                 'method': 'post',
-                'url': '/newpost'
+                'url': 'newpost'
             },
             'reset': False,
             'data': {
@@ -231,7 +231,7 @@ scenarios = {
             'scope': 'newpost',
             'request': {
                 'method': 'post',
-                'url': '/newpost'
+                'url': 'newpost'
             },
             'reset': False,
             'data': {
@@ -266,7 +266,7 @@ scenarios = {
             'scope': 'like',
             'request': {
                 'method': 'post',
-                'url': '/post',
+                'url': 'post',
                 'status': 403
             },
             'expect_errors': True,
@@ -287,7 +287,7 @@ scenarios = {
             'scope': 'like',
             'request': {
                 'method': 'post',
-                'url': '/post'
+                'url': 'post'
             },
             'reset': False,
             'data': {},
@@ -322,7 +322,7 @@ scenarios = {
             'reset': True,
             'request': {
                 'method': 'get',
-                'url': '/signup'
+                'url': 'signup'
             },
             'assertions': {
                 'in': [
@@ -338,7 +338,7 @@ scenarios = {
             'reset': True,
             'request': {
                 'method': 'get',
-                'url': '/signup'
+                'url': 'signup'
             },
             'assertions': {
                 'not_in': [
@@ -352,7 +352,7 @@ scenarios = {
             'reset': True,
             'request': {
                 'method': 'get',
-                'url': '/signup'
+                'url': 'signup'
             },
             'context': 'signup_session',
             'assertions': {
@@ -369,7 +369,7 @@ scenarios = {
             'subject': "Plain form features all nescessary input elements",
             'request': {
                 'method': 'get',
-                'url': '/signup'
+                'url': 'signup'
             },
             'reset': True,
             'assertions': {
@@ -390,7 +390,7 @@ scenarios = {
             'subject': 'Username exists',
             'request': {
                 'method': 'post',
-                'url': '/signup'
+                'url': 'signup'
             },
             'reset': True,
             'data': {
@@ -419,7 +419,7 @@ scenarios = {
             'subject': 'Username too short',
             'request': {
                 'method': 'post',
-                'url': '/signup'
+                'url': 'signup'
             },
             'reset': True,
             'data': {
@@ -448,7 +448,7 @@ scenarios = {
             'subject': 'Password too short',
             'request': {
                 'method': 'post',
-                'url': '/signup'
+                'url': 'signup'
             },
             'reset': True,
             'data': {
@@ -477,7 +477,7 @@ scenarios = {
             'subject': "Passwords don't match",
             'request': {
                 'method': 'post',
-                'url': '/signup'
+                'url': 'signup'
             },
             'reset': True,
             'data': {
@@ -506,7 +506,7 @@ scenarios = {
             'subject': "Bad email address",
             'request': {
                 'method': 'post',
-                'url': '/signup'
+                'url': 'signup'
             },
             'reset': True,
             'data': {
@@ -539,7 +539,7 @@ scenarios = {
             'subject': 'Enforcing login',
             'request': {
                 'method': 'get',
-                'url': '/newpost',
+                'url': 'newpost',
                 'status': 302
             },
             'reset': True,
@@ -555,7 +555,7 @@ scenarios = {
             'subject': 'Login with <<{username}>> works',
             'request': {
                 'method': 'post',
-                'url': '/login',
+                'url': 'login',
                 'status': 302
             },
             'reset': False, # reset cookies before execution
@@ -897,7 +897,7 @@ tests = {
                         "post-view": [
                             {
                                 "field": "url",
-                                "template": "/post/{post_id}",
+                                "template": "post/{post_id}",
                                 "replace": {
                                     "url": [
                                         {
@@ -924,7 +924,7 @@ tests = {
                         "like": [
                             {
                                 "field": "url",
-                                "template": "/post/{post_id}/like",
+                                "template": "post/{post_id}/like",
                                 "replace": {
                                     "url": [
                                         {
@@ -951,7 +951,7 @@ tests = {
                         "unlike": [
                             {
                                 "field": "url",
-                                "template": "/post/{post_id}/like",
+                                "template": "post/{post_id}/like",
                                 "replace": {
                                     "url": [
                                         {
@@ -981,7 +981,7 @@ tests = {
                         "like": [
                             {
                                 "field": "url",
-                                "template": "/post/{post_id}/like",
+                                "template": "post/{post_id}/like",
                                 "replace": {
                                     "url": [
                                         {
@@ -1098,7 +1098,7 @@ tests = {
                         "post-view": [
                             {
                                 "field": "url",
-                                "template": "/post/{post_id}",
+                                "template": "post/{post_id}",
                                 "replace": {
                                     "url": [
                                         {
@@ -1197,7 +1197,7 @@ tests = {
                         "get-post-update": [
                             {
                                 "field": "url",
-                                "template": "/post/{post_id}/update",
+                                "template": "post/{post_id}/update",
                                 "replace": {
                                     "url": [
                                         {
@@ -1296,7 +1296,7 @@ tests = {
                         "post-post-update": [
                             {
                                 "field": "url",
-                                "template": "/post/{post_id}/update",
+                                "template": "post/{post_id}/update",
                                 "replace": {
                                     "url": [
                                         {

@@ -6,7 +6,7 @@
 config = {
     "udpyblog": {
         # Freely define what URL root path the module is served under
-        "blog_prefix": "/",
+        "blog_prefix": "/blog/",
 
         # Path to the jinja2 html templates, relative to the app.yaml
         "template_folder": "dist/templates",
