@@ -58,7 +58,7 @@ class UdPyBlogUser(UdPyBlogEntity):
     lastlog = db.DateTimeProperty(auto_now_add = True)
 
     def get_fancy_date(self):
-        return self.created.strftime(UdPyBlog.config["post_date_template"])
+        return self.created.strftime(UdPyBlog.get_config("post_date_template"))
 
     @classmethod
     def empty(cls):
@@ -82,7 +82,7 @@ class UdPyBlogPost(UdPyBlogEntity):
     user = db.ReferenceProperty(UdPyBlogUser, collection_name='posts')
 
     def get_fancy_date(self):
-        return self.created.strftime(UdPyBlog.config["post_date_template"])
+        return self.created.strftime(UdPyBlog.get_config("post_date_template"))
 
     def get_likes_count(self):
         return self.users_who_like.count()
@@ -97,7 +97,7 @@ class UdPyBlogPostComment(UdPyBlogEntity):
     """Comment entities."""
     legit = True
     subject = db.StringProperty(required = True)
-    content = db.TextProperty(required = True)
+    note = db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
     categories = db.ListProperty(db.Key)
     user = db.ReferenceProperty(UdPyBlogUser, collection_name='users')
@@ -106,7 +106,7 @@ class UdPyBlogPostComment(UdPyBlogEntity):
     def empty(cls, **attributes):
         defaults = {
             "subject": "",
-            "content": "",
+            "note": "",
             "created": "",
             "categories": "",
             "user": None,
@@ -116,10 +116,10 @@ class UdPyBlogPostComment(UdPyBlogEntity):
         return UdPyBlogEmptyModel(defaults)
 
     def get_fancy_date(self):
-        return self.created.strftime(UdPyBlog.config["post_date_template"])
+        return self.created.strftime(UdPyBlog.get_config("post_date_template"))
 
-    def get_content(self):
-        return re.sub(r"\r?\n","<br>",self.content)
+    def get_comment(self):
+        return re.sub(r"\r?\n","<br>",self.note)
 
 class UdPyBlogPostLikes(db.Model):
     """Like Entities place collections in both posts and users. If a user removes a like, the entity gets removed."""
@@ -137,7 +137,7 @@ class UdPyBlogPostLikes(db.Model):
     created = db.DateTimeProperty(auto_now_add = True)
 
     def get_fancy_date(self):
-        return self.created.strftime(UdPyBlog.config["post_date_template"])
+        return self.created.strftime(UdPyBlog.get_config("post_date_template"))
 
 class UdPyBlogImage(db.Model):
     """Uploaded images are organized in this model."""
@@ -153,7 +153,7 @@ class UdPyBlogImage(db.Model):
     created = db.DateTimeProperty(auto_now_add = True)
 
     def get_fancy_date(self):
-        return self.created.strftime(UdPyBlog.config["post_date_template"])
+        return self.created.strftime(UdPyBlog.get_config("post_date_template"))
 
 class UdPyBlogHandler(webapp2.RequestHandler):
     """Base handler. Supplying all the basic methods required by all subclasses. Especially authentication."""
@@ -196,18 +196,17 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         self.response.out.write(*a, **kw)
 
     def url_prefixed(self, fragment):
-        return self.request.scheme + "://" + self.request.host + UdPyBlog.config["blog_prefix"] + fragment
+        return self.request.scheme + "://" + self.request.host + UdPyBlog.get_config("blog_prefix") + fragment
 
     def redirect_prefixed(self, fragment, code=None):
-        self.redirect(UdPyBlog.config["blog_prefix"] + fragment, code=code)
+        self.redirect(UdPyBlog.get_config("blog_prefix") + fragment, code=code)
 
     def render_str(self, template_file, **params):
         params = params or {}
-        params["image_url_prefix"] = self.url_prefixed(UdPyBlog.config["image_view_url_part"])
         params["login_page"] = self.login
         params["signup_page"] = self.signup
-        params["url_prefix"] = UdPyBlog.config["blog_prefix"]
-        params["config"] = UdPyBlog.config
+        params["config"] = UdPyBlog.dump_config()
+        params["config"]["image_url_prefixed"] = self.url_prefixed(UdPyBlog.get_config("image_view_url_part"))
         params["user"] = UdPyBlogUser.empty()
         if self.user:
             params["user"] = self.user
@@ -322,7 +321,13 @@ class UdPyBlogHandler(webapp2.RequestHandler):
 
     def make_hash(self, message, salt=None):
         salt = salt or self.make_salt()
-        return "%s%s" % (hmac.new(self.secret, message + salt,hashlib.sha256).hexdigest(), salt)
+        return "{}{}".format(
+            hmac.new(
+                UdPyBlog.get_config("password_secret", True),
+                message + salt,hashlib.sha256
+            ).hexdigest(),
+            salt
+        )
 
     def make_salt(self):
         return "".join( random.choice("abcdef" + string.digits) for x in xrange(self.salt_length) )
@@ -346,9 +351,21 @@ class UdPyBlogHandler(webapp2.RequestHandler):
 
     def process_images(self, post=None, expiry=None):
         """
-        This function should be triggered by new/update post post requests.
-        It assigns uploaded images as detected in the content to the
-        post_id in the parameter and deletes all the remaining images
+        This function deals with orphaned BLOBs in the system. It is called from
+        different handlers to keep the database fro bein clotted with costly junk.
+
+        It is called from
+
+        * Cron Task
+        * Logout
+        * Login
+        * Post Create
+        * Post Update
+
+        Purging orphaned images on post submission is a little rude. I assume the user
+        is not editing 2 posts with images at the time. In a real world scenario I
+        would reduce the cleanup to logout/login and cron - these situations are the
+        only ones safe to assume they don't harm a contributor
         """
 
         if post:
@@ -435,7 +452,12 @@ class UdPyBlogImageUploadHandler(blobstore_handlers.BlobstoreUploadHandler, UdPy
             uploaded_image.put()
             self.render_json(
                 {
-                  "location": self.url_prefixed('%s%s' % (UdPyBlog.config["image_view_url_part"], upload.key()))
+                    "location": self.url_prefixed(
+                        "{}{}".format(
+                            UdPyBlog.get_config("image_view_url_part"),
+                            upload.key()
+                        )
+                    )
                 }
             )
 
@@ -594,7 +616,10 @@ class UdPyBlogMainHandler(UdPyBlogHandler):
             return
 
         posts = []
-        posts_query = PagedQuery(UdPyBlogPost.all().order('-created'), UdPyBlog.config["posts_per_page"])
+        posts_query = PagedQuery(
+            UdPyBlogPost.all().order('-created'),
+            UdPyBlog.get_config("posts_per_page")
+        )
         pages_total = posts_query.page_count()
 
         if not page_id:
@@ -864,7 +889,12 @@ class UdPyBlogPostUpdateHandler(UdPyBlogPostHandler):
                         "content": post.content,
                         "post_id": post_id,
                         "update": self.update,
-                        "cover_image_url": post.cover_image and self.url_prefixed("{0}{1}".format(UdPyBlog.config["image_view_url_part"],post.cover_image.blob_key.key())),
+                        "cover_image_url": post.cover_image and self.url_prefixed(
+                            "{0}{1}".format(
+                                UdPyBlog.get_config("image_view_url_part"),
+                                post.cover_image.blob_key.key()
+                            )
+                        ),
                         "upload_url": self.get_image_upload_url(),
                         "upload_url_source": self.url_prefixed("image/upload_url")
                     }
@@ -881,7 +911,7 @@ class UdPyBlogPostUpdateHandler(UdPyBlogPostHandler):
 class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
     """Handling comments posted on a post"""
 
-    fields = [ 'subject', 'content' ]
+    fields = [ 'subject', 'note' ]
     required = fields
     restricted = True
     def validate(self,field):
@@ -900,7 +930,7 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
         if field == "subject":
             return (cgi.escape(self.get_request_var(field)),'')
 
-        if field == "content":
+        if field == "note":
             return (cgi.escape(self.get_request_var(field)),'')
 
     def get(self, post_id):
@@ -934,7 +964,7 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
             self.args["comment"] = UdPyBlogPostComment.empty(
                 **{
                     "subject": self.args["subject"],
-                    "content": self.args["content"]
+                    "note": self.args["note"]
                 }
             )
 
@@ -948,7 +978,7 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
             if not self.update:
                 comment = UdPyBlogPostComment(
                     subject = self.args["subject"],
-                    content = self.args["content"],
+                    note = self.args["note"],
                     post = post,
                     user = self.user
                 )
@@ -959,8 +989,8 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
                     self.redirect_prefixed("post/{0}".format(int(post_id)))
                     return
 
-                comment.content = self.args["content"]
                 comment.subject = self.args["subject"]
+                comment.note = self.args["note"]
 
             comment.put()
 
@@ -982,8 +1012,8 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
                 "error": error,
                 "comment": UdPyBlogPostComment.empty(
                     **{
-                        "subject": self.args["content"],
-                        "content": self.args["subject"]
+                        "subject": self.args["subject"],
+                        "note": self.args["note"]
                     }
                 ),
                 "post": post
@@ -1067,7 +1097,7 @@ class UdPyBlogPostCommentEditHandler(UdPyBlogPostCommentHandler):
             if not self.update:
                 comment = UdPyBlogPostComment(
                     subject = self.get_request_var('subject'),
-                    content = self.get_request_var('content'),
+                    note = self.get_request_var('note'),
                     post = post,
                     user = self.user
                 )
@@ -1077,8 +1107,8 @@ class UdPyBlogPostCommentEditHandler(UdPyBlogPostCommentHandler):
                     self.redirect_prefixed("post/{0}".format(post_id))
                     return
 
-                comment.content = self.args["content"]
                 comment.subject = self.args["subject"]
+                comment.note = self.args["note"]
 
             comment.put()
             blog_entity_context = {
@@ -1100,7 +1130,7 @@ class UdPyBlogPostCommentEditHandler(UdPyBlogPostCommentHandler):
                 "error": error,
                 "comment": None,
                 "subject": self.get_request_var("subject"),
-                "content": self.get_request_var("content"),
+                "note": self.get_request_var("note"),
                 "created": self.get_request_var("created")
             }
         )
@@ -1147,7 +1177,7 @@ class UdPyBlogPostCleanUpHandler(UdPyBlogTaskHandler):
                         +
                         datetime.timedelta(
                             seconds=(
-                                UdPyBlog.config["blob_expiry_seconds"] * -1
+                                UdPyBlog.get_config("blob_expiry_seconds") * -1
                             )
                         )
                     )
@@ -1256,7 +1286,7 @@ class UdPyBlog():
         ('_cleanup', UdPyBlogPostCleanUpHandler) # featured by cron
     ]
 
-    config = {
+    __config = {
         "template_folder": "dist/templates",
         "blog_prefix": "/",
         "blob_expiry_seconds": (5*24*3600),
@@ -1288,6 +1318,10 @@ class UdPyBlog():
             "content": {
                 "min": 10,
                 "max": 10000
+            },
+            "note": {
+                "min": 10,
+                "max": 500
             }
         }
     }
@@ -1302,49 +1336,63 @@ class UdPyBlog():
     @classmethod
     def prepare(cls, config = None):
         if config:
+            # Sensitive directives are prefixed with a "_" to mask them on dump
+            if "password_secret" in config:
+                cls.__config["_password_secret"] = config["password_secret"]
+
             if "template_folder" in config:
-                cls.config["template_folder"] = config["template_folder"]
+                cls.__config["template_folder"] = config["template_folder"]
 
             if "blog_prefix" in config:
-                cls.config["blog_prefix"] = config["blog_prefix"]
+                cls.__config["blog_prefix"] = config["blog_prefix"]
 
             if "forbidden_tags" in config:
-                cls.config["forbidden_tags"] = config["forbidden_tags"]
+                cls.__config["forbidden_tags"] = config["forbidden_tags"]
 
             if "image_view_url_part" in config:
-                cls.config["image_view_url_part"] = config["image_view_url_part"]
+                cls.__config["image_view_url_part"] = config["image_view_url_part"]
 
             if "blob_expiry_seconds" in config:
-                cls.config["blob_expiry_seconds"] = config["blob_expiry_seconds"]
+                cls.__config["blob_expiry_seconds"] = config["blob_expiry_seconds"]
 
             if "post_date_template" in config:
-                cls.config["post_date_template"] = config["post_date_template"]
+                cls.__config["post_date_template"] = config["post_date_template"]
 
             if "comment_date_template" in config:
-                cls.config["comment_date_template"] = config["comment_date_template"]
+                cls.__config["comment_date_template"] = config["comment_date_template"]
 
             if "posts_per_page" in config:
-                cls.config["posts_per_page"] = config["posts_per_page"]
+                cls.__config["posts_per_page"] = config["posts_per_page"]
 
             if "input_requirements" in config:
-                cls.config["input_requirements"] = cls.merge_dicts(
-                    cls.config["input_requirements"],
+                cls.__config["input_requirements"] = cls.merge_dicts(
+                    cls.__config["input_requirements"],
                     config["input_requirements"]
                 )
 
         cls.template_dir = os.path.join(
             os.path.dirname(__file__),
-            cls.config["template_folder"]
+            cls.__config["template_folder"]
         )
         cls.jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(cls.template_dir))
 
     @classmethod
     def get_routes(cls):
-        cls.routes.append((UdPyBlog.config["image_view_url_part"] + "(.+)",UdPyBlogImageViewHandler))
-        if cls.config["blog_prefix"]:
+        cls.routes.append(
+            (
+                UdPyBlog.get_config("image_view_url_part") + "(.+)",
+                UdPyBlogImageViewHandler
+            )
+        )
+        if cls.__config["blog_prefix"]:
             routes_prefixed = []
             for route in cls.routes:
-                routes_prefixed.append((cls.config["blog_prefix"] + route[0],route[1]))
+                routes_prefixed.append(
+                    (
+                        cls.__config["blog_prefix"] + route[0],
+                        route[1]
+                    )
+                )
             return routes_prefixed
         else:
             return cls.routes
@@ -1357,11 +1405,11 @@ class UdPyBlog():
             else:
                 return True
 
-        if field in cls.config["input_requirements"]:
-            if len(input) < cls.config["input_requirements"][field]["min"]:
+        if field in cls.__config["input_requirements"]:
+            if len(input) < cls.__config["input_requirements"][field]["min"]:
                 return "Input too short"
 
-            if len(input) > cls.config["input_requirements"][field]["max"]:
+            if len(input) > cls.__config["input_requirements"][field]["max"]:
                 return "Input too long"
 
         if field in cls.regexp:
@@ -1381,13 +1429,13 @@ class UdPyBlog():
             if match:
                 content = content.replace(quoted, match.group(1) + self.url_prefixed("image/view") + match.group(0))
 
-        for (tag, replacement) in cls.config["forbidden_tags"]:
+        for (tag, replacement) in cls.__config["forbidden_tags"]:
             if replacement:
                 replacer = ('<' + tag, '<' + replacement), ('</' + tag + '>', '</' + replacement + '>')
             else:
                 replacer = ('<' + tag, ''), ('</' + tag + '>', '')
 
-            content= reduce(lambda a, kv: a.replace(*kv), replacer, content)
+            content = reduce(lambda a, kv: a.replace(*kv), replacer, content)
 
         return content
 
@@ -1399,7 +1447,8 @@ class UdPyBlog():
                 "error.html",
                 exception=exception,
                 response=response,
-                user=UdPyBlogUser.empty()
+                user=UdPyBlogUser.empty(),
+                config=UdPyBlog.dump_config()
             )
         )
 
@@ -1424,3 +1473,20 @@ class UdPyBlog():
         for dictionary in dict_args:
             result.update(dictionary)
         return result
+
+    @classmethod
+    def get_config(cls, key, secure=False):
+        if not secure:
+            if key in cls.__config:
+                return cls.__config[key]
+
+        else:
+            if "_" + key in cls.__config:
+                return cls.__config["_" + key]
+
+        return ""
+
+    @classmethod
+    def dump_config(cls):
+        """preventing sensitive config keys from being exposed"""
+        return {key: value for key, value in cls.__config.iteritems() if key[0] != "_"}

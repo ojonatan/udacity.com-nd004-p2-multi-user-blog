@@ -30,24 +30,24 @@
 							<span class="icon-bar"></span>
 							<span class="icon-bar"></span>
 						</button>
-						<span class="logo"><a href="{{ url_prefix }}" class="navbar-brand">UdPy Blog</a></span>
+						<span class="logo"><a href="{{ config.blog_prefix }}" class="navbar-brand">UdPy Blog</a></span>
 					</div>
 					<!-- Collection of nav links and other content for toggling -->
 					<div id="navbarCollapse" class="collapse navbar-collapse">
 						<ul class="nav navbar-nav">
-							<li><a href="{{ url_prefix }}" data-blog-control="get-home">Home</a></li>
-							<li><a href="{{ url_prefix }}newpost" data-blog-control="get-post-create">New Post</a></li>
+							<li><a href="{{ config.blog_prefix }}" data-blog-control="get-home">Home</a></li>
+							<li><a href="{{ config.blog_prefix }}newpost" data-blog-control="get-post-create">New Post</a></li>
 {% if user.legit %}
-							<li><a class="hidden-sm hidden-md hidden-lg" href="{{ url_prefix }}logout" data-blog-control="get-logout">Log out</a></li>
+							<li><a class="hidden-sm hidden-md hidden-lg" href="{{ config.blog_prefix }}logout" data-blog-control="get-logout">Log out</a></li>
 {% else %}
-							<li><a class="hidden-sm hidden-md hidden-lg" href="{{ url_prefix }}login" data-blog-control="get-login">Log in</a></li>
-							<li><a class="hidden-sm hidden-md hidden-lg" href="{{ url_prefix }}signup" data-blog-control="get-signup">Sign up</a></li>
+							<li><a class="hidden-sm hidden-md hidden-lg" href="{{ config.blog_prefix }}login" data-blog-control="get-login">Log in</a></li>
+							<li><a class="hidden-sm hidden-md hidden-lg" href="{{ config.blog_prefix }}signup" data-blog-control="get-signup">Sign up</a></li>
 {% endif %}
 						</ul>
 {% if user.legit %}
 						<form class="navbar-form navbar-right hidden-xs">
 							<div class="form-group">
-								<a href="{{ url_prefix }}logout"><button type="button" class="btn btn-default" data-blog-control="get-logout">Log out</button></a>
+								<a href="{{ config.blog_prefix }}logout"><button type="button" class="btn btn-default" data-blog-control="get-logout">Log out</button></a>
 							</div>
 						</form>
 						<form class="navbar-form navbar-right hidden-xs">
@@ -60,12 +60,12 @@
 	{% if not login_page %}
 						<form class="navbar-form navbar-right hidden-xs">
 							<div class="form-group">
-								<a href="{{ url_prefix }}signup" data-blog-control="get-signup"><button type="button" class="btn btn-primary">Sign up</button></a>
+								<a href="{{ config.blog_prefix }}signup" data-blog-control="get-signup"><button type="button" class="btn btn-primary">Sign up</button></a>
 							</div>
 						</form>
 						<form class="navbar-form navbar-right hidden-xs">
 							<div class="form-group">
-								<a href="{{ url_prefix }}login" data-blog-control="get-login"><button type="button" class="btn btn-default">Login</button></a>
+								<a href="{{ config.blog_prefix }}login" data-blog-control="get-login"><button type="button" class="btn btn-default">Login</button></a>
 							</div>
 						</form>
 
@@ -86,19 +86,19 @@
 			<div class="container">
 				<div class="row">
 					<div class="col-sm-3">
-						<h2 class="logo"><a href="{{ url_prefix }}" data-blog-control="get-home">UdPy Blog</a></h2>
+						<h2 class="logo"><a href="{{ config.blog_prefix }}" data-blog-control="get-home">UdPy Blog</a></h2>
 					</div>
 					<div class="col-sm-6">
 						<h5>Get started</h5>
 						<ul>
-							<li><a href="{{ url_prefix }}" data-blog-control="get-home">Home</a></li>
+							<li><a href="{{ config.blog_prefix }}" data-blog-control="get-home">Home</a></li>
 {% if user.legit %}
-							<li><a class="hidden-sm" href="{{ url_prefix }}logout" data-blog-control="get-logout">Log out</a></li>
+							<li><a class="hidden-sm" href="{{ config.blog_prefix }}logout" data-blog-control="get-logout">Log out</a></li>
 {% else %}
-							<li><a class="hidden-sm" href="{{ url_prefix }}login" data-blog-control="get-login">Log in</a></li>
-							<li><a class="hidden-sm" href="{{ url_prefix }}signup" data-blog-control="get-signup">Sign up</a></li>
+							<li><a class="hidden-sm" href="{{ config.blog_prefix }}login" data-blog-control="get-login">Log in</a></li>
+							<li><a class="hidden-sm" href="{{ config.blog_prefix }}signup" data-blog-control="get-signup">Sign up</a></li>
 {% endif %}
-							<li><a href="{{ url_prefix }}newpost" data-blog-control="get-post-create">New Post</a></li>
+							<li><a href="{{ config.blog_prefix }}newpost" data-blog-control="get-post-create">New Post</a></li>
 						</ul>
 					</div>
 					<div class="col-sm-3">

@@ -2,7 +2,7 @@
 
 {% block content %}
 
-			<h3 class="header-icon header-icon-user">Log in</h3>
+			<h3><i class="icon-position-before icon-user"></i>Log in</h3>
 
 			<hr>
 
@@ -27,7 +27,7 @@
 				<div class="form-inline row">
 					<div class="form-group col-xs-12">
 						<button type="submit" class="btn btn-primary" data-blog-control="post-login">Login</button>
-						<a href="{{ url_prefix }}" data-blog-control="get-home"><button type="button" class="btn btn-link" data-blog-control="post-signup">Cancel</button></a>
+						<a href="{{ config.blog_prefix }}" data-blog-control="get-home"><button type="button" class="btn btn-link" data-blog-control="post-signup">Cancel</button></a>
 					</div>
 				</div>
 
@@ -35,6 +35,6 @@
 
 			<hr>
 
-			<p>No account yet? <a href="{{ url_prefix }}signup" data-blog-control="get-login">Sign up right away!</a></p>
+			<p>No account yet? <a href="{{ config.blog_prefix }}signup" data-blog-control="get-login">Sign up right away!</a></p>
 
 {% endblock %}

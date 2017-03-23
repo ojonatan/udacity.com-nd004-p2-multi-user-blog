@@ -2,7 +2,7 @@
 
 {% block content %}
 
-			<h3 class="header-icon header-icon-user">Sign up now</h3>
+			<h3><i class="icon-position-before icon-user"></i>Sign up now</h3>
 
 			<hr>
 
@@ -41,13 +41,13 @@
 				<div class="form-inline row">
 					<div class="form-group col-xs-12">
 						<button type="submit" class="btn btn-primary" data-blog-control="post-signup">Submit</button>
-						<a href="{{ url_prefix }}" data-blog-control="get-home"><button type="button" class="btn btn-link" data-blog-control="post-signup">Cancel</button></a>
+						<a href="{{ config.blog_prefix }}" data-blog-control="get-home"><button type="button" class="btn btn-link" data-blog-control="post-signup">Cancel</button></a>
 					</div>
 				</div>
 			</form>
 
 			<hr>
 
-			<p>Already have an account? Log in <a href="{{ url_prefix }}login" data-blog-control="get-login">here</a></p>
+			<p>Already have an account? Log in <a href="{{ config.blog_prefix }}login" data-blog-control="get-login">here</a></p>
 
 {% endblock %}

@@ -3,15 +3,15 @@
 {% block content %}
 
 			<div class="post post-full" data-blog-panel="post">
-				<span class="post-date">{{ post.get_fancy_date()  }}</span>
+				<span class="post-date">{{ post.get_fancy_date() }}</span>
 				<div class="post-cover-summary">
 					<div class="post-cover-options">
-						<a href="{{ url_prefix }}post/{{ post.key().id() }}">
+						<a href="{{ config.blog_prefix }}post/{{ post.key().id() }}">
 							<div class="post-cover-image-wrapper">
 								<div
 										class="post-cover-image"
 	{% if post.cover_image %}
-										style="background-image: url({{ image_url_prefix  }}{{ post.cover_image.blob_key.key()  }})"
+										style="background-image: url({{ config.image_url_prefixed }}{{ post.cover_image.blob_key.key() }})"
 	{% endif %}
 								>
 								</div>
@@ -23,7 +23,7 @@
 					<span class="post-summary" data-blog-content-element="summary">{{ post.get_summary() }}</span>
 
 					<div class="post-actions">
-						<form action="{{ url_prefix }}post/{{ post.key().id() }}/like" method="post" data-blog-form="post-post-like">
+						<form action="{{ config.blog_prefix }}post/{{ post.key().id() }}/like" method="post" data-blog-form="post-post-like">
 	{% if user.legit and user.liked_posts.filter('post = ',post.key()).count() == 1 %}
 							<button
 								type="submit"
@@ -60,7 +60,7 @@
 
 			<div class="form-inline row">
 				<div class="form-group col-xs-12">
-					<a href="{{ url_prefix }}post/{{ post.key().id() }}/update" data-blog-control="get-post-update"><button type="button" class="btn btn-primary" data-blog-control="post-comment-update">Update</button></a>
+					<a href="{{ config.blog_prefix }}post/{{ post.key().id() }}/update" data-blog-control="get-post-update"><button type="button" class="btn btn-primary" data-blog-control="post-comment-update">Update</button></a>
 				</div>
 			</div>
 
@@ -72,13 +72,13 @@
 				<article class="col-xs-12 comment">
 					<small>by <span class="comment-author">{{ comment.user.username }}</span> <span class="comment-date">{{ comment.get_fancy_date() }}</span></small>
 					<h4>{{ comment.subject }}</h4>
-					<p>{{ comment.get_content() }}</p>
+					<p>{{ comment.get_comment() }}</p>
 			{% if comment.user.key() == user.key() %}
 					<div class="comment-actions">
 						<form>
-							<a href="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/edit" data-blog-control="get-comment-update"><button type="button" class="btn btn-link button-icon icon-pencil">edit</button></a>
+							<a href="{{ config.blog_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/edit" data-blog-control="get-comment-update"><button type="button" class="btn btn-link button-icon icon-pencil">edit</button></a>
 						</form>
-						<form action="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/delete" data-blog-form="post-comment-delete">
+						<form action="{{ config.blog_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/delete" data-blog-form="post-comment-delete">
 							<button type="submit" class="btn btn-link fa button-icon icon-remove" data-blog-control="post-comment-delete">delete</button>
 						</form>
 					</div>
@@ -91,17 +91,17 @@
 			<div class="row" data-blog-panel="comment" id="comments">
 				<div class="col-xs-12 col-sm-6">
 	{% if not update %}
-					<form data-toggle="validator" role="forms" action="{{ url_prefix }}post/{{ post.key().id() }}/comment" method="post" data-blog-form="comment-form-create">
+					<form data-toggle="validator" role="forms" action="{{ config.blog_prefix }}post/{{ post.key().id() }}/comment" method="post" data-blog-form="comment-form-create">
 						<div class="form-inline row">
 							<div class="form-group col-xs-12">
-								<h3 class="header-icon header-icon-comments">Leave Comment</h3>
+								<h3><i class="icon-position-before icon-comments"></i>Leave Comment</h3>
 							</div>
 						</div>
 	{% else %}
-					<form data-toggle="validator" role="forms" action="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/edit" method="post" data-blog-form="comment-form-update">
+					<form data-toggle="validator" role="forms" action="{{ config.blog_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/edit" method="post" data-blog-form="comment-form-update">
 						<div class="form-inline row">
 							<div class="form-group col-xs-12">
-								<h3 class="header-icon header-icon-comments">Update Comment</h3>
+								<h3><i class="icon-position-before icon-comments"></i>Update Comment</h3>
 								<input type="hidden" name="comment_id" value="{{ comment_id }}">
 							</div>
 						</div>
@@ -118,9 +118,9 @@
 						<div class="form-inline row">
 							<div class="form-group col-xs-12">
 								<label for="kontakt-nachricht">Your comment*</label>
-								<textarea name="content" class="form-control form-control-textarea" id="post-content" rows="3" data-error="Please insert a post content." data-maxlength="2000" required="required">{{ content }}</textarea>
-								<small class="form-text text-muted">max. 500 characters</small>
-								<div class="help-block with-errors error-content" data-blog-error="content">{{ error_content }}</div>
+								<textarea name="note" class="form-control form-control-textarea" id="post-note" rows="3" data-error="Please insert a post note." data-maxlength="{{ config.input_requirements.note.max }}" required="required">{{ note }}</textarea>
+								<small class="form-text text-muted">max. {{ config.input_requirements.note.max }} characters</small>
+								<div class="help-block with-errors error-note" data-blog-error="note">{{ error_note }}</div>
 							</div>
 						</div>
 
@@ -162,8 +162,8 @@
 
 			<hr>
 
-			<a href="{{ url_prefix }}" data-blog-control="get-post-create"><button class="btn btn-link" type="button">New post</button></a>
-			<a href="{{ url_prefix }}" data-blog-control="get-home"><button class="btn btn-link" type="button">Home</button></a>
+			<a href="{{ config.blog_prefix }}" data-blog-control="get-post-create"><button class="btn btn-link" type="button">New post</button></a>
+			<a href="{{ config.blog_prefix }}" data-blog-control="get-home"><button class="btn btn-link" type="button">Home</button></a>
 
 		</div>
 

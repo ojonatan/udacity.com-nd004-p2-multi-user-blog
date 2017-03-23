@@ -7,12 +7,12 @@
 		<div class="row">
 			<div class="col-xs-6">
 		{% if page_prev %}
-				<a href="{{ url_prefix }}page/{{ page_prev }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link"><i class="icon-position-before icon-arrow-left"></i>Newer Posts</button></a>
+				<a href="{{ config.blog_prefix }}page/{{ page_prev }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link"><i class="icon-position-before icon-arrow-left"></i>Newer Posts</button></a>
 		{% endif %}
 			</div>
 			<div class="col-xs-6" style="text-align: right;">
 		{% if page_next %}
-				<a href="{{ url_prefix }}page/{{ page_next }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link">Older Posts<i class="icon-position-after icon-arrow-right"></i></button></a>
+				<a href="{{ config.blog_prefix }}page/{{ page_next }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link">Older Posts<i class="icon-position-after icon-arrow-right"></i></button></a>
 		{% endif %}
 			</div>
 		</div>
@@ -22,22 +22,22 @@
 	{% for post in posts %}
 			<article class="post col-xs-12 col-sm-6">
 				<div class="well">
-					<span class="post-date">{{ post.get_fancy_date()  }}</span>
+					<span class="post-date">{{ post.get_fancy_date() }}</span>
 					<h4 class="post-subject">{{ post.subject }}</h4>
 					<div class="post-cover-summary">
 						<div class="post-cover-options">
-							<a href="{{ url_prefix }}post/{{ post.key().id() }}">
+							<a href="{{ config.blog_prefix }}post/{{ post.key().id() }}">
 								<div class="post-cover-image-wrapper">
 									<div
 										class="post-cover-image"
 		{% if post.cover_image %}
-										style="background-image: url({{ image_url_prefix  }}{{ post.cover_image.blob_key.key()  }})"
+										style="background-image: url({{ config.image_url_prefixed }}{{ post.cover_image.blob_key.key() }})"
 		{% endif %}
 								>
 									</div>
 								</div>
 							</a>
-							<form action="{{ url_prefix }}post/{{ post.key().id() }}/like" method="post" data-blog-form="post-post-like">
+							<form action="{{ config.blog_prefix }}post/{{ post.key().id() }}/like" method="post" data-blog-form="post-post-like">
 		{% if user.legit and user.liked_posts.filter('post = ',post.key()).count() == 1 %}
 								<button
 									type="submit"
@@ -55,15 +55,15 @@
 			{% if user.legit and post.user.key() == user.key() %}
 									disabled="disabled"
 			{% endif %}
-								>{{ post.get_likes_count()  }}</button>
+								>{{ post.get_likes_count() }}</button>
 		{% endif %}
 							</form>
-							<a href="{{ url_prefix }}post/{{ post.key().id() }}#comments" class="post-button-wrapper" data-blog-control="get-post-comment">
+							<a href="{{ config.blog_prefix }}post/{{ post.key().id() }}#comments" class="post-button-wrapper" data-blog-control="get-post-comment">
 								<button type="button" class="post-comments button-icon button-icon-comments">{{ post.get_comments_count() }} Comments</button>
 							</a>
 						</div><span class="post-author">by {{ post.user.username }}</span><br>
 						<span class="post-summary">{{ post.get_summary() }}</span><br>
-						<a href="{{ url_prefix }}post/{{ post.key().id() }}" data-blog-control="get-post-view"><button type="button" class="button-icon button-icon-more">read more</button></a>
+						<a href="{{ config.blog_prefix }}post/{{ post.key().id() }}" data-blog-control="get-post-view"><button type="button" class="button-icon button-icon-more">read more</button></a>
 					</div>
 				</div>
 			</article>
@@ -75,12 +75,12 @@
 		<div class="row">
 			<div class="col-xs-6">
 		{% if page_prev %}
-				<a href="{{ url_prefix }}page/{{ page_prev }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link"><i class="icon-position-before icon-arrow-left"></i>Newer Posts</button></a>
+				<a href="{{ config.blog_prefix }}page/{{ page_prev }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link"><i class="icon-position-before icon-arrow-left"></i>Newer Posts</button></a>
 		{% endif %}
 			</div>
 			<div class="col-xs-6" style="text-align: right;">
 		{% if page_next %}
-				<a href="{{ url_prefix }}page/{{ page_next }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link">Older Posts<i class="icon-position-after icon-arrow-right"></i></button></a>
+				<a href="{{ config.blog_prefix }}page/{{ page_next }}" data-blog-control="get-post-create"><button type="button" class="btn btn-link">Older Posts<i class="icon-position-after icon-arrow-right"></i></button></a>
 		{% endif %}
 			</div>
 		</div>
