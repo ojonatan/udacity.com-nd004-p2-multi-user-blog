@@ -113,6 +113,9 @@ class UdPyBlogPostComment(UdPyBlogEntity):
     def get_fancy_date(self):
         return self.created.strftime(UdPyBlog.config["post_date_template"])
 
+    def get_content(self):
+        return re.sub(r"\r?\n","<br>",self.content)
+
 class UdPyBlogPostLikes(db.Model):
     legit = True
     post = db.ReferenceProperty(
@@ -1280,8 +1283,13 @@ class UdPyBlog():
     static_path_prefix = ""
     jinja_env = None
     post_date_template = "%d, %b %Y, %I:%M%p"
+    comment_date_template = "%d, %b %Y, %I:%M%p"
 
     input_requirements = {
+        "email": {
+            "min": 6,
+            "max": 250
+        },
         "password": {
             "min": 3,
             "max": 20
@@ -1323,6 +1331,9 @@ class UdPyBlog():
 
             if "post_date_template" in config:
                 cls.config["post_date_template"] = config["post_date_template"]
+
+            if "comment_date_template" in config:
+                cls.config["comment_date_template"] = config["comment_date_template"]
 
             if "input_requirements" in config:
                 cls.config["input_requirements"] = cls.merge_dicts(

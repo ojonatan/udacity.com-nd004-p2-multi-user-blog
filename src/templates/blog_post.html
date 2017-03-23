@@ -2,88 +2,160 @@
 
 {% block content %}
 
-<div class="post" data-blog-panel="post">
-    <span style="float: right">{{ post.created }}</span>
-    {% if post.cover_image %}
-	<div class="post-cover-image" style="background-image: url({{ image_url_prefix }}{{ post.cover_image.blob_key.key() }})"></div>
-	{% else %}
-	<div class="post-cover-image"></div>
+			<div class="post post-full" data-blog-panel="post">
+				<span class="post-date">{{ post.get_fancy_date()  }}</span>
+				<div class="post-cover-summary">
+					<div class="post-cover-options">
+						<a href="{{ url_prefix }}post/{{ post.key().id() }}">
+							<div class="post-cover-image-wrapper">
+								<div
+										class="post-cover-image"
+	{% if post.cover_image %}
+										style="background-image: url({{ image_url_prefix  }}{{ post.cover_image.blob_key.key()  }})"
 	{% endif %}
-    <h2 class="post-subject" data-blog-content-element="subject">{{ post.subject }}</h2>
+								>
+								</div>
+							</div>
+						</a>
 
-	<small data-blog-content-element="summary">{{ post.summary }}</small>
+					</div><h2 class="post-subject">{{ post.subject }}</h2><br>
+					<span class="post-author">by {{ post.user.username }}</span><br>
+					<span class="post-summary">{{ post.get_summary() }}</span>
 
-    <hr />
+					<div class="post-actions">
+						<form action="{{ url_prefix }}post/{{ post.key().id() }}/like" method="post" data-blog-form="post-post-like">
+	{% if user.legit and user.liked_posts.filter('post = ',post.key()).count() == 1 %}
+							<button
+								type="submit"
+								class="post-un-like-button button-icon button-icon button-icon-un-like"
+								data-blog-control="post-unlike"
+		{% if user.legit and post.user.key() == user.key() %}
+								disabled="disabled"
+		{% endif %}
+							>{{ post.get_likes_count() }}</button>
+	{% else %}
+							<button
+								type="submit"
+								class="post-like-button button-icon button-icon-like"
+								data-blog-control="post-like"
+		{% if user.legit and post.user.key() == user.key() %}
+								disabled="disabled"
+		{% endif %}
+							>{{ post.get_likes_count() }}</button>
+	{% endif %}
+						</form>
+						<a href="#comments" class="post-button-wrapper" data-blog-control="get-post-comment">
+							<button type="button" class="post-comments button-icon button-icon-comments">{{ post.get_comments_count() }} Comments</button>
+						</a>
+					</div>
+
+				</div>
+			</div>
+
+			<hr />
 <!--post-start-->
-    <div style="clear: both;" data-blog-content-element="content">{{ post.content }}</div>
+			<div class="well" data-blog-content-element="content">{{ post.content }}</div>
 <!--post-end-->
-    <div>{{ post.user.username }}</div>
-	<hr>
+
 	{% if post.comments.count() %}
-	<div class="comment" data-blog-panel="comment" id="comments">
+			<div class="row" data-blog-panel="comment" id="comments">
 		{% for comment in post.comments.order('-created') %}
-			<small>{{ comment.user.username }} {{ comment.created }}</small>
-			<h4>{{ comment.subject }}</h4>
-			<p>{{ comment.comment }}</p>
+				<article class="col-xs-12 comment">
+					<small>by <span class="comment-author">{{ comment.user.username }}</span> <span class="comment-date">{{ comment.get_fancy_date() }}</span></small>
+					<h4>{{ comment.subject }}</h4>
+					<p>{{ comment.get_content() }}</p>
 			{% if comment.user.key() == user.key() %}
-			<a href="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/edit" data-blog-control="get-comment-update">edit</a>
-			<form action="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/delete" data-blog-form="post-comment-delete">
-				<button type="submit" data-blog-control="post-comment-delete">delete</button>
-			</form>
+					<div class="comment-actions">
+						<form>
+							<a href="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/edit" data-blog-control="get-comment-update"><button type="button" class="btn btn-link button-icon icon-pencil">edit</button></a>
+						</form>
+						<form action="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/delete" data-blog-form="post-comment-delete">
+							<button type="submit" class="btn btn-link fa button-icon icon-remove" data-blog-control="post-comment-delete">delete</button>
+						</form>
+					</div>
 			{% endif %}
+				</article>
 
 		{% endfor %}
-	</div>
+			</div>
+	{% endif %}
+			<div class="row" data-blog-panel="comment" id="comments">
+				<div class="col-xs-12 col-sm-6">
+	{% if not update %}
+					<form data-toggle="validator" role="forms" action="{{ url_prefix }}post/{{ post.key().id() }}/comment" method="post" data-blog-form="comment-form-create">
+						<div class="form-inline row">
+							<div class="form-group col-xs-12">
+								<h3 class="header-icon header-icon-comments">Leave Comment</h3>
+							</div>
+						</div>
+	{% else %}
+					<form data-toggle="validator" role="forms" action="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/edit" method="post" data-blog-form="comment-form-update">
+						<div class="form-inline row">
+							<div class="form-group col-xs-12">
+								<h3 class="header-icon header-icon-comments">Update Comment</h3>
+								<input type="hidden" name="comment_id" value="{{ comment_id }}">
+							</div>
+						</div>
 	{% endif %}
 
-</div>
-<hr />
+						<div class="form-inline row">
+							<div class="form-group col-xs-12">
+								<label for="post-subject">Subject*</label><br />
+								<input maxlength="{{ config.input_requirements.subject.max }}" name="subject" type="text" class="form-control" id="post-subject" data-error="Please enter a subject." placeholder="" value="{{ subject }}" required="required">
+								<div class="help-block with-errors error-subject" data-blog-error="subject">{{ error_subject }}</div>
+							</div>
+						</div>
 
-	{% if user %}
+						<div class="form-inline row">
+							<div class="form-group col-xs-12">
+								<label for="kontakt-nachricht">Your comment*</label>
+								<textarea name="content" class="form-control form-control-textarea" id="post-content" rows="3" data-error="Please insert a post content." data-maxlength="2000" required="required">{{ content }}</textarea>
+								<small class="form-text text-muted">max. 500 characters</small>
+								<div class="help-block with-errors error-content" data-blog-error="content">{{ error_content }}</div>
+							</div>
+						</div>
 
-		{% if not update %}
-	<form action="{{ url_prefix }}post/{{ post.key().id() }}/comment" method="post" data-blog-form="comment-form-create">
-		<h3>new comment</h3>
-		{% else %}
-	<form action="{{ url_prefix }}post/{{ post.key().id() }}/comment/{{ comment.key().id() }}/edit" method="post" data-blog-form="comment-form-update">
-		<h3>update comment</h3>
-		<input type="hidden" name="comment_id" value="{{ comment_id }}" />
-		{% endif %}
-		<div>
-			<label for="subject">Subject</label>
+						<div class="form-inline row">
+							<div class="form-group col-xs-12">
+	{% if not update %}
+								<button type="submit" class="btn btn-primary" data-blog-control="post-comment-create">Submit</button>
+	{% else %}
+								<button type="submit" class="btn btn-primary" data-blog-control="post-comment-update">Update</button>
+	{% endif %}
+							</div>
+						</div>
+
+
+					</form>
+				</div>
+				<div class="col-xs-12 col-sm-6">
+
+					<h4>UdPy Blog Comment Guidelines</h4>
+
+					<p>The UdPy Blog is a place where we encourage interaction and discussion between anyone interested in whatever the subject is that is covered here.</p>
+
+					<p>We ask that you're respectful in your comments. We reserve the right to remove anything we deem:</p>
+
+					<ul>
+						<li>Abusive or personal attacks</li>
+						<li>Material that is unlawful, obscene, defamatory, threatening, harassing, abusive, slanderous, hateful or embarrassing to any other entity</li>
+						<li>Third party advertising</li>
+						<li>Chain letters or spam</li>
+						<li>We also reserve the right to terminate involvement by users who post such content.</li>
+					</ul>
+
+					<p>The views and opinions expressed on this sites do not necessarily represent those of it's creators. Therefore, we cannot be held responsible for the accuracy or reliability of information posted by external parties.</p>
+
+					<p>For your safety, never include your phone number, email, address or other personal information in a post. Your comments are visible to all.</p>
+
+				</div>
+			</div>
+
+			<hr>
+
+			<a href="{{ url_prefix }}" data-blog-control="get-post-create"><button class="btn btn-link" type="button">New post</button></a>
+			<a href="{{ url_prefix }}" data-blog-control="get-home"><button class="btn btn-link" type="button">Home</button></a>
+
 		</div>
-		<input type="text" name="subject" id="subject" value="{{ comment.subject }}" />
-		<span style="color:red" data-blog-error="subject">{{ error_subject }}</span>
-
-
-		<div>
-			<label for="content">Your comment</label>
-		</div>
-
-		<textarea name="content">{{ comment.content }}</textarea>
-		<span style="color:red" data-blog-error="content">{{ error_content }}</span>
-
-		<div class="error">{{ error }}</div>
-		<input type="submit" />
-
-	</form>
-	{% endif %}
-
-	{% if user.legit and post.user.key() == user.key() %}
-<a href="{{ url_prefix }}post/{{ post.key().id() }}/update" data-blog-control="get-post-update">update post</a><br />
-	{% endif %}
-
-	{% if not user.legit or post.user.key() != user.key() %}
-	<form action="{{url_prefix}}post/{{post.key().id()}}/like" method="post" data-blog-form="post-post-like">
-		{% if user.legit and user.liked_posts.filter('post = ',post.key()).count() == 1 %}
-		<button type="submit" class="post-un-like-button" data-blog-control="post-unlike">{{ post.get_likes_count() }}</button>
-		{% else %}
-		<button type="submit" class="post-like-button" data-blog-control="post-like">{{ post.get_likes_count() }}</button>
-		{% endif %}
-	</form>
-	{% endif %}
-
-<a href="{{ url_prefix }}" data-blog-control="get-home">back</a><br />
-<a href="{{ url_prefix }}newpost" data-blog-control="get-post-create">new post</a>
 
 {% endblock %}

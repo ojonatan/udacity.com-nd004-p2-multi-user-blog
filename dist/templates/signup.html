@@ -1,58 +1,53 @@
 {% extends "base.html" %}
 
 {% block content %}
-	<form id="form-signup" method="post" data-blog-form="post-signup">
-		<table border="0">
-			<tr>
-				<td>
-					<label for="username">Username</label>
-				</td>
-				<td>
-					<input type="text" name="username" id="username" value="{{ username }}" />
-				</td>
-				<td>
-					<span class="error error-username" data-blog-error="username">{{ error_username }}</span>
-				</td>
-			</tr>
-			<tr>
-				<td>
-					<label for="password">Password</label>
-				</td>
-				<td>
-					<input type="password" name="password" id="password" />
-				</td>
-				<td>
-					<span class="error error-password" data-blog-error="password">{{ error_password }}</span>
-				</td>
-			</tr>
-			<tr>
-				<td>
-					<label for="verify">Verify Password</label>
-				</td>
-				<td>
-					<input type="password" name="verify" id="verify" />
-				</td>
-				<td>
-					<span class="error error-verify" data-blog-error="verify">{{ error_verify }}</span>
-				</td>
-			</tr>
-			<tr>
-				<td>
-					<label for="email">Email (optional)</label>
-				</td>
-				<td>
-					<input type="text" name="email" id="email" value="{{ email }}" />
-				</td>
-				<td>
-					<span class="error error-email" data-blog-error="email">{{ error_email }}</span>
-				</td>
-			</tr>
-			<tr>
-				<td>&nbsp;</td>
-				<td colspan="2"><input type="submit" data-blog-control="post-signup" /></td>
-			</tr>
-		</table>
 
-		Already have an account? Log in <a href="login" data-blog-control="get-login">here</a>
-	</form>
+			<h3 class="header-icon header-icon-user">Sign up now</h3>
+
+			<hr>
+
+			<form data-toggle="validator" role="forms" id="form-signup" method="post" data-blog-form="post-signup">
+				<input type="hidden" name="comment_id" value="{{ comment_id }}">
+
+				<div class="form-inline row">
+					<div class="form-group col-xs-12 col-sm-6">
+						<label for="post-username">Username*</label><br />
+						<input maxlength="{{ config.input_requirements.username.max }}" name="username" type="text" class="form-control" id="post-username" data-error="Please enter a username." placeholder="" value="{{ username }}" required="required">
+						<div class="help-block with-errors error-username" data-blog-error="username">{{ error_username }}</div>
+					</div>
+				</div>
+
+				<div class="form-inline row">
+					<div class="form-group col-xs-12 col-sm-6">
+						<label for="post-password">Password*</label><br />
+						<input type="password" maxlength="{{ config.input_requirements.password.max }}" name="password" class="form-control" id="post-password" data-error="Please enter a password." placeholder="" value="{{ password }}" required="required">
+						<div class="help-block with-errors error-password" data-blog-error="password">{{ error_password }}</div>
+					</div>
+ 					<div class="form-group col-xs-12 col-sm-6">
+						<label for="post-verify">Password (repeat)*</label><br />
+						<input type="password" name="verify" class="form-control" id="post-verify" data-error="Please repeat the password." placeholder="" value="{{ verify }}" required="required">
+						<div class="help-block with-errors error-verify" data-blog-error="verify">{{ error_verify }}</div>
+					</div>
+				</div>
+
+				<div class="form-inline row">
+					<div class="form-group col-xs-12 col-sm-6">
+						<label for="post-email">Email*</label><br />
+						<input maxlength="{{ config.input_requirements.email.max }}" name="email" type="text" class="form-control" id="post-email" data-error="Please enter a email." placeholder="" value="{{ email }}" required="required">
+						<div class="help-block with-errors error-email" data-blog-error="email">{{ error_email }}</div>
+					</div>
+				</div>
+
+				<div class="form-inline row">
+					<div class="form-group col-xs-12">
+						<button type="submit" class="btn btn-primary" data-blog-control="post-signup">Submit</button>
+						<a href="{{ url_prefix }}" data-blog-control="get-home"><button type="button" class="btn btn-link" data-blog-control="post-signup">Cancel</button></a>
+					</div>
+				</div>
+			</form>
+
+			<hr>
+
+			<p>Already have an account? Log in <a href="{{ url_prefix }}login" data-blog-control="get-login">here</a></p>
+
 {% endblock %}

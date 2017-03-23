@@ -3,12 +3,23 @@ body {
 	font-family: 'Source Sans Pro', sans-serif;
 }
 
-.error {
-	color: red;
+.udpy-blog {
+	a,
+	button,
+	button.btn {
+		&,
+		&:active,
+		&:hover,
+		&:focus {
+			text-decoration: none;
+			border: 0;
+			outline: none;
+		}
+	}
 }
 
-input {
-	color: #005C97;
+.error {
+	color: red;
 }
 
 #editor {
@@ -74,7 +85,11 @@ h6 {
 {
 	font-size: 10px;
 	float: right;
-	
+}
+
+.post-full .post-date {
+	font-size: 12px;
+	float: none;
 }
 
 .clearer {
@@ -196,4 +211,40 @@ h6 {
 
 .form-inline .form-control {
 	width: 100%;
+}
+
+.post-full .post-actions {
+}
+
+.post-full .post-author {
+	float: none;
+	font-style: italic;
+}
+
+.post-full .post-subject {
+	display: inline;
+	margin-bottom: 10px;
+	height: auto;
+}
+
+.header-icon:before {
+	font-family: FontAwesome;
+	padding-right: 15px;
+}
+
+.header-icon-comments:before {
+	content: "\f0e5";
+}
+
+.header-icon-user:before {
+	content: "\f007";
+}
+
+.comment-actions form {
+	display: inline;
+}
+
+.comment {
+	border-top: 1px solid #eee;
+	padding-top: 20px;
 }
