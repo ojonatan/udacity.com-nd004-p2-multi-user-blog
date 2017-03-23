@@ -50,3 +50,14 @@ libraries:
 skip_files:
 - ^node_modules/*
 - .git/*
+- ^tests/*
+- ^tasks/*
+- ^dumps/*
+- ^src/*
+- ^.bowerrc
+- ^bower.json
+- ^build.bat
+- ^build.py
+- ^Gruntfile.js
+- ^package.json
+- ^README.md-template

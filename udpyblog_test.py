@@ -332,14 +332,24 @@ class TestUdPyBlog(ExpectingTestCase):
     def tearDown(self):
         # prepare results, build summaries etc
 
-        report_filename = "{}{}-report.json".format(TestUdPyBlog.prefix,self.testcase)
+        report_filename = os.path.join(
+            os.path.dirname(__file__),
+            'tests',
+            "{}{}-report.json".format(TestUdPyBlog.prefix,self.testcase)
+        )
         self._prepare_results()
 
         self.report = open(report_filename,'a+')
         self.report.write(json.dumps(self.results[self.testcase]))
         self.report.close()
 
-        self.index = open("{}reports".format(TestUdPyBlog.prefix),'a+')
+        report_index = os.path.join(
+            os.path.dirname(__file__),
+            'tests',
+            "{}reports".format(TestUdPyBlog.prefix)
+        )
+
+        self.index = open(report_index,'a+')
         self.index.write(report_filename + "\n")
         self.index.close()
 

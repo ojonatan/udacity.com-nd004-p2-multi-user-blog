@@ -28,22 +28,33 @@ prefix_file = open('udpyblog_test_prefix.py','w+')
 prefix_file.write('prefix = "{}"'.format(prefix))
 prefix_file.close()
 
-cmd = r'nosetests -s -v --with-gae --gae-lib-root="C:\Users\oschleede\AppData\Local\Google\Cloud SDK\google-cloud-sdk\platform\google_appengine" udpyblog_test.py 2> log.txt'
+cmd = r'nosetests -s -v --with-gae --gae-lib-root="C:\Users\oschleede\AppData\Local\Google\Cloud SDK\google-cloud-sdk\platform\google_appengine" udpyblog_test.py 2> tests\log.txt'
 
 tests = not os.system( cmd )
 
 os.remove( prefix_file_name )
+os.remove( prefix_file_name + "c" )
 
 test_report = test_report.format_report(
     **{
-        'prefix': prefix
+        'prefix': os.path.join(
+            os.path.dirname(__file__),
+            'tests',
+            prefix
+        )
     }
 )
 
-report_name = prefix + 'udpyblog_test.txt'
+report_name = os.path.join(
+    os.path.dirname(__file__),
+    'tests',
+    prefix + 'udpyblog_test.txt'
+)
 report_file = open(report_name,'w+')
 report_file.write("\n".join(test_report))
 report_file.close()
+
+
 
 genrated = datetime.datetime.now().isoformat()
 
