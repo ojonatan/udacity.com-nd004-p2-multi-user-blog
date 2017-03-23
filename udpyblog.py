@@ -29,6 +29,7 @@ from google.appengine.api import memcache
 # Models
 
 class UdPyBlogEmptyModel():
+    """Empty model allows for a quick instantiation of an entity to serve thru jinja2"""
     legit = False
     def __init__(self, properties):
         for property in properties:
@@ -38,6 +39,7 @@ class UdPyBlogEmptyModel():
         return ""
 
 class UdPyBlogEntity(db.Model):
+    """Base class for all entites to allow for creation of empty objects emulating the real entity class."""
     @classmethod
     def empty(cls):
         return UdPyBlogEmptyModel(
@@ -47,6 +49,7 @@ class UdPyBlogEntity(db.Model):
 
 
 class UdPyBlogUser(UdPyBlogEntity):
+    """User entities. Created thru signup"""
     legit = True
     username = db.StringProperty(required = True)
     password = db.StringProperty(required = True)
@@ -68,6 +71,7 @@ class UdPyBlogUser(UdPyBlogEntity):
         )
 
 class UdPyBlogPost(UdPyBlogEntity):
+    """Post entities."""
     legit = True
     subject = db.StringProperty(required = True)
     cover_image = db.ReferenceProperty(required = False)
@@ -89,8 +93,8 @@ class UdPyBlogPost(UdPyBlogEntity):
     def get_summary(self):
         return re.sub(r"\r?\n","<br>",self.summary)
 
-
 class UdPyBlogPostComment(UdPyBlogEntity):
+    """Comment entities."""
     legit = True
     subject = db.StringProperty(required = True)
     content = db.TextProperty(required = True)
@@ -118,6 +122,7 @@ class UdPyBlogPostComment(UdPyBlogEntity):
         return re.sub(r"\r?\n","<br>",self.content)
 
 class UdPyBlogPostLikes(db.Model):
+    """Like Entities place collections in both posts and users. If a user removes a like, the entity gets removed."""
     legit = True
     post = db.ReferenceProperty(
         UdPyBlogPost,
@@ -135,6 +140,7 @@ class UdPyBlogPostLikes(db.Model):
         return self.created.strftime(UdPyBlog.config["post_date_template"])
 
 class UdPyBlogImage(db.Model):
+    """Uploaded images are organized in this model."""
     legit = True
     session = db.StringProperty(required = True)
     user = db.ReferenceProperty(
@@ -150,6 +156,7 @@ class UdPyBlogImage(db.Model):
         return self.created.strftime(UdPyBlog.config["post_date_template"])
 
 class UdPyBlogHandler(webapp2.RequestHandler):
+    """Base handler. Supplying all the basic methods required by all subclasses. Especially authentication."""
     signup = False
     login = False
     restricted = False
@@ -214,7 +221,7 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         self.response.headers['Content-Type'] = 'application/json'
         self.response.out.write(json.dumps(payload))
 
-    def add_redirection(self, redirect, replace=False):
+    def add_redirection(self, redirect, append=False):
         if not redirect:
             return
 
@@ -225,10 +232,15 @@ class UdPyBlogHandler(webapp2.RequestHandler):
             return
 
         redirects = self.session.get("redirect")
-        if redirects and not replace:
-            return
+        if redirects:
+            if not append:
+                return
+        else:
+            redirects = []
 
-        self.session["redirect"] = [ redirect ]
+        redirects.append(redirect)
+
+        self.session["redirect"] = redirects
         return
 
     def get_redirection(self, rightaway=True):
@@ -252,7 +264,7 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         return False
 
     def auth(self):
-
+        """Authentication method. The user is authenticated on every request, extraction the info from the supplied "access" cookie."""
         try:
             if not self.session.get("created"):
                 self.session["created"] = time.time()
@@ -260,42 +272,44 @@ class UdPyBlogHandler(webapp2.RequestHandler):
             logging.info(sys.exc_info())
             self.error(500)
 
-        if self.user:
-            UdPyBlogUser.get_by_id(int(access[1]))
+        # User object stored in session
+        if self.session.get("user"):
+            user = self.session.get("user")
+            if user.legit:
+                logging.info("[auth] User is logged in from session")
+                self.user = user
 
-        if "access" in self.request.cookies:
+        # No user in session? Try cookie
+        elif "access" in self.request.cookies:
             if not self.request.cookies.get("access") and not self.restricted:
                 return True
 
             access = self.request.cookies.get("access").split("|")
-
-            access = self.request.cookies.get("access").split("|")
             if len(access) == 2:
+                logging.info("[auth] Trying to login user from access cookie")
                 user = UdPyBlogUser.get_by_id(int(access[1]))
                 if user and self.validate_user(user, access):
                     self.user = user
-                    # do not redirect if override is mulidict - pending post!!
-                    if not self.logout:
-                        if self.request_override.__class__.__name__ != "UnicodeMultiDict":
-                            if self.get_redirection():
-                                return False
+                    self.session["user"] = self.user
 
-                    return True
+        # Do not redirect if override is mulidict - pending post!!
+        if self.user:
+            if not self.logout:
+                if self.request_override.__class__.__name__ != "UnicodeMultiDict":
+                    if self.get_redirection():
+                        return False
 
-                if not self.restricted:
-                    return True
+            return True
 
+        # Non restricted pages allowed to continue processing
         if not self.restricted:
             return True
 
-
-        # if something goes wrong and we are on the way to log out, no redir
-        # logout handler will kill all
+        # Logout may proceed never mind the result of the current login
         if self.logout:
             return True
 
         # store the original url in order to redirect on success!
-
         redirects = [ self.request.url ]
         if self.request.method == "POST":
             # freeze vars for thaw in get
@@ -339,7 +353,6 @@ class UdPyBlogHandler(webapp2.RequestHandler):
 
         if post:
             logging.info("[process_images] Checking for Post: {}".format(post.key()));
-
             images_stored = UdPyBlogImage.all().filter('user =', self.user.key())
             images_check = []
             for image in images_stored:
@@ -532,18 +545,11 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
         return
 
     def post(self, post_id, thaw=False):
-        if not thaw and self.request.referer:
-            try:
-
-                redirects = self.session.get("redirect")
-                if redirects:
-                    redirects.append(self.request.referer)
-                    self.session["redirect"] = redirects
-            except:
-                logging.info(sys.exc_info())
-
         if not self.auth():
             return
+
+        if not thaw:
+            self.add_redirection(self.request.referer, True)
 
         if not self.user:
             self.redirect_prefixed("")
@@ -565,14 +571,15 @@ class UdPyBlogPostLikeHandler(UdPyBlogHandler):
         logging.info("post has likes: " + str(posts_user_likes.count()))
         if posts_user_likes.count():
             for post_user_likes in posts_user_likes:
+                logging.info("UNLIKE {}".format(post_user_likes))
                 post_user_likes.delete()
         else:
             post_like = UdPyBlogPostLikes(
                 post=post,
                 user=self.user
             )
+            logging.info("LIKE {}".format(post_like))
             post_like.put()
-
 
         if self.get_redirection():
             return
@@ -655,6 +662,9 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
                 salt = salt
             )
             user.put()
+
+            self.session["user"] = user
+
             self.response.headers.add_header(
                 "Set-Cookie",
                 str(
@@ -1395,7 +1405,6 @@ class UdPyBlog():
 
     @classmethod
     def render_template(cls, template_file, **params):
-        logging.info(sys.exc_info())
         template = cls.jinja_env.get_template(template_file)
         return template.render(**params)
 
