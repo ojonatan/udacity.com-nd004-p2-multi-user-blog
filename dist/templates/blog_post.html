@@ -49,12 +49,13 @@
 						</a>
 					</div>
 				</div>
-			</div>
 
-			<hr />
+				<hr />
 <!--post-start-->
-			<div class="well" data-blog-content-element="content">{{ post.content }}</div>
+				<div class="well" data-blog-content-element="content">{{ post.content }}</div>
 <!--post-end-->
+
+			</div>
 
 	{% if user.legit and post.user.key() == user.key() %}
 

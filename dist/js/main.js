@@ -35,6 +35,10 @@ function initBlogForm(){
 		'submit',
 		function(){
 			if($(this).data('ready') > 0){
+				if(tinymce.activeEditor.getContent().indexOf('src="data:') > -1){
+					alert("Please wait until all modified images are saved..");
+					return false;
+				}
 				tinymce.activeEditor.setMode('readonly');
 				return true;
 			}
