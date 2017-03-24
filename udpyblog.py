@@ -398,7 +398,12 @@ class UdPyBlogHandler(webapp2.RequestHandler):
                 if not image.post or image.post.key() == post.key():
                     images_check.append(str(image.blob_key.key()))
 
-            images = re.findall("encoded_gs_file:[a-zA-Z0-9]+",post.content)
+            images = []
+            quoteds = re.findall(r'[\"\']([^\'\"]+)(?=[\"\'])',post.content)
+            for quoted in quoteds:
+                match = re.search(UdPyBlog.get_config("image_view_url_part") + r'(.+)$',quoted)
+                if match:
+                    images.append(match.group(1))
 
             if images:
                 logging.info("[process_images] Post references {} images: {}".format(len(images),images));
@@ -668,6 +673,7 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
     signup = True
     fields = [ 'username','password','verify','email' ]
     required = [ 'username','password' ]
+    scope = "signup"
 
     errors = 0
     args = {}
@@ -689,9 +695,12 @@ class UdPyBlogSignupHandler(UdPyBlogHandler):
         if not self.auth():
             return
 
+        self.args["jump"] = ""
         for field in self.fields:
             self.args[field],self.args['error_' + field] = '',''
             self.args[field],self.args['error_' + field] = self.validate(field)
+            if not self.args["jump"] and self.args['error_' + field]:
+                self.args["jump"] = "{}-{}".format(self.scope,field)
 
         if self.errors > 0:
             self.render("signup.html", **self.args )
@@ -779,6 +788,7 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
     restricted = True
     fields = [ 'subject', 'summary', 'content' ]
     required = fields
+    scope = "post"
 
     def post(self, post_id=None):
         if not self.auth():
@@ -786,9 +796,12 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
 
         self.args["update"] = self.update
 
+        self.args["jump"] = ""
         for field in self.fields:
             self.args[field],self.args['error_' + field] = '',''
             self.args[field],self.args['error_' + field] = self.validate(field)
+            if not self.args["jump"] and self.args['error_' + field]:
+                self.args["jump"] = "{}-{}".format(self.scope,field)
 
         self.args["update"] = self.update
         self.args["cover_image"] = None
@@ -933,6 +946,8 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
     fields = [ 'subject', 'note' ]
     required = fields
     restricted = True
+    scope = "comment"
+
     def validate(self,field):
 
         # Check for validity of entered data agains re and length reqs
@@ -974,9 +989,12 @@ class UdPyBlogPostCommentHandler(UdPyBlogPostHandler):
         if not post:
             self.redirect_prefixed('')
 
+        self.args["jump"] = ""
         for field in self.fields:
             self.args[field],self.args['error_' + field] = '',''
             self.args[field],self.args['error_' + field] = self.validate(field)
+            if not self.args["jump"] and self.args['error_' + field]:
+                self.args["jump"] = "{}-{}".format(self.scope,field)
 
         if self.errors > 0:
             self.args["post"] = post

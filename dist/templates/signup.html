@@ -13,7 +13,7 @@
 					<div class="form-group col-xs-12 col-sm-6">
 						<label for="post-username">Username*</label><br />
 						<input maxlength="{{ config.input_requirements.username.max }}" name="username" type="text" class="form-control" id="post-username" data-error="Please enter a username." placeholder="" value="{{ username }}" required="required">
-						<div class="help-block with-errors error-username" data-blog-error="username">{{ error_username }}</div>
+						<div class="help-block with-errors error-username {% if error_username %}has-error{% endif %}" data-blog-error="username">{{ error_username }}</div>
 					</div>
 				</div>
 
@@ -21,12 +21,12 @@
 					<div class="form-group col-xs-12 col-sm-6">
 						<label for="post-password">Password*</label><br />
 						<input type="password" maxlength="{{ config.input_requirements.password.max }}" name="password" class="form-control" id="post-password" data-error="Please enter a password." placeholder="" value="{{ password }}" required="required">
-						<div class="help-block with-errors error-password" data-blog-error="password">{{ error_password }}</div>
+						<div class="help-block with-errors error-password {% if error_password %}has-error{% endif %}" data-blog-error="password">{{ error_password }}</div>
 					</div>
  					<div class="form-group col-xs-12 col-sm-6">
 						<label for="post-verify">Password (repeat)*</label><br />
 						<input type="password" name="verify" class="form-control" id="post-verify" data-error="Please repeat the password." placeholder="" value="{{ verify }}" required="required">
-						<div class="help-block with-errors error-verify" data-blog-error="verify">{{ error_verify }}</div>
+						<div class="help-block with-errors error-verify {% if error_verify %}has-error{% endif %}" data-blog-error="verify">{{ error_verify }}</div>
 					</div>
 				</div>
 
@@ -34,7 +34,7 @@
 					<div class="form-group col-xs-12 col-sm-6">
 						<label for="post-email">Email</label><br />
 						<input maxlength="{{ config.input_requirements.email.max }}" name="email" type="text" class="form-control" id="post-email" data-error="Please enter a email." placeholder="" value="{{ email }}">
-						<div class="help-block with-errors error-email" data-blog-error="email">{{ error_email }}</div>
+						<div class="help-block with-errors error-email {% if error_email %}has-error{% endif %}" data-blog-error="email">{{ error_email }}</div>
 					</div>
 				</div>
 

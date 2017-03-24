@@ -27,7 +27,7 @@
 					<label for="post-subject">Subject*</label><br />
 					<input maxlength="{{ config.input_requirements.subject.max }}" name="subject" type="text" class="form-control" id="post-subject" data-error="Please enter a subject." placeholder="" value="{{ subject }}" required="required" data-blog-content-element="subject">
 					<small class="form-text text-muted">max. {{ config.input_requirements.subject.max }} characters</small>
-					<div class="help-block with-errors error-subject" data-blog-error="subject">{{ error_subject }}</div>
+					<div class="help-block with-errors error-subject {%if error_subject %}has-error{% endif %}" data-blog-error="subject">{{ error_subject }}</div>
 				</div>
 			</div>
 			<div class="form-inline row">
@@ -39,19 +39,19 @@
 	{% else %}
 					<input type="hidden" id="post-cover-url" name="cover_image_url" value="">
 	{% endif %}
-					<div class="help-block with-errors error-cover" data-blog-error="cover">{{ error_cover_image }}</div>
+					<div class="help-block with-errors error-cover {% if error_cover_image %}has-error{% endif %}" data-blog-error="cover">{{ error_cover_image }}</div>
 				</div>
 				<div class="form-group col-xs-12 col-sm-6">
 					<label for="kontakt-nachricht">Summary*</label>
 					<textarea name="summary" class="form-control form-control-textarea" id="post-summary" rows="3" data-error="Please insert a post summary." data-maxlength="{{ config.input_requirements.summary.max }}" required="required" data-blog-content-element="summary">{{ summary }}</textarea>
 					<small class="form-text text-muted">max. {{ config.input_requirements.summary.max }} characters</small>
-					<div class="help-block with-errors error-summary" data-blog-error="summary">{{ error_summary }}</div>
+					<div class="help-block with-errors error-summary {% if error_summary %}has-error{% endif %}" data-blog-error="summary">{{ error_summary }}</div>
 				</div>
 			</div>
 
 			<div class="form-group">
-				<label for="subject">Post*</label>
-				<div class="help-block with-errors error-content" data-blog-error="content">{{ error_content }}</div>
+				<label for="content" id="post-content">Post*</label>
+				<div class="help-block with-errors error-content {% if error_content %}has-error{% endif %}" data-blog-error="content">{{ error_content }}</div>
 				<textarea name="content" id="content" class="form-control-upload" data-blog-upload-url-source="{{ upload_url_source }}" data-blog-upload-url="{{ upload_url }}">{{ content }}</textarea>
 
 			</div>

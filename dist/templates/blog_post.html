@@ -110,18 +110,18 @@
 
 						<div class="form-inline row">
 							<div class="form-group col-xs-12">
-								<label for="post-subject">Subject*</label><br />
-								<input maxlength="{{ config.input_requirements.subject.max }}" name="subject" type="text" class="form-control" id="post-subject" data-error="Please enter a subject." placeholder="" value="{{ subject }}" required="required">
-								<div class="help-block with-errors error-subject" data-blog-error="subject">{{ error_subject }}</div>
+								<label for="comment-subject">Subject*</label><br />
+								<input maxlength="{{ config.input_requirements.subject.max }}" name="subject" type="text" class="form-control" id="comment-subject" data-error="Please enter a subject." placeholder="" value="{{ subject }}" required="required">
+								<div class="help-block with-errors error-subject {%if error_subject %}has-error{% endif %}" data-blog-error="subject">{{ error_subject }}</div>
 							</div>
 						</div>
 
 						<div class="form-inline row">
 							<div class="form-group col-xs-12">
-								<label for="kontakt-nachricht">Your comment*</label>
-								<textarea name="note" class="form-control form-control-textarea" id="post-note" rows="3" data-error="Please insert a post note." data-maxlength="{{ config.input_requirements.note.max }}" required="required">{{ note }}</textarea>
+								<label for="comment-note">Your comment*</label>
+								<textarea name="note" class="form-control form-control-textarea" id="comment-note" rows="3" data-error="Please insert a post note." data-maxlength="{{ config.input_requirements.note.max }}" required="required">{{ note }}</textarea>
 								<small class="form-text text-muted">max. {{ config.input_requirements.note.max }} characters</small>
-								<div class="help-block with-errors error-note" data-blog-error="note">{{ error_note }}</div>
+								<div class="help-block with-errors error-note {%if error_note %}has-error{% endif %}" data-blog-error="note">{{ error_note }}</div>
 							</div>
 						</div>
 
