@@ -121,6 +121,7 @@ function initBlogForm(){
 				'emoticons template paste textcolor colorpicker textpattern imagetools codesample toc'
 			],
 			images_upload_url: $('.form-control-upload').first().data("blog-upload-url"),
+			automatic_uploads: true,
 			file_picker_types: 'image',
 			file_picker_callback: function(cb, value, meta) {
 				var input = document.createElement('input');

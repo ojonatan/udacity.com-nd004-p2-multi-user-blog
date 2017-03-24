@@ -264,11 +264,11 @@ class UdPyBlogHandler(webapp2.RequestHandler):
 
     def sanitize_post(self, content):
         """Fix all blob references to actual image viewing urls. Replace/filter forbidden tags."""
-        quoteds = re.findall(r'["\'][^"\']+["\']',content)
+        quoteds = re.findall(r'[\"\']([^\'\"]+)(?=[\"\'])',content)
         for quoted in quoteds:
-            match = re.search(r'encoded_gs_file:[^"\']+(["\'])$',quoted)
+            match = re.search(r'^[\./]+' + UdPyBlog.get_config("image_view_url_part") + r'(.+)$',quoted)
             if match:
-                content = content.replace(quoted, match.group(1) + self.url_prefixed("image/view/") + match.group(0))
+                content = content.replace(quoted, self.url_prefixed(UdPyBlog.get_config("image_view_url_part")) + match.group(1))
 
         for (tag, replacement) in UdPyBlog.get_config("forbidden_tags"):
             if replacement:
@@ -1336,7 +1336,7 @@ class UdPyBlog():
             },
             "content": {
                 "min": 10,
-                "max": 10000
+                "max": 100000000
             },
             "note": {
                 "min": 10,
