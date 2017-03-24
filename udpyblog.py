@@ -262,6 +262,24 @@ class UdPyBlogHandler(webapp2.RequestHandler):
 
         return False
 
+    def sanitize_post(self, content):
+        """Fix all blob references to actual image viewing urls. Replace/filter forbidden tags."""
+        quoteds = re.findall(r'["\'][^"\']+["\']',content)
+        for quoted in quoteds:
+            match = re.search(r'encoded_gs_file:[^"\']+(["\'])$',quoted)
+            if match:
+                content = content.replace(quoted, match.group(1) + self.url_prefixed("image/view/") + match.group(0))
+
+        for (tag, replacement) in UdPyBlog.get_config("forbidden_tags"):
+            if replacement:
+                replacer = ('<' + tag, '<' + replacement), ('</' + tag + '>', '</' + replacement + '>')
+            else:
+                replacer = ('<' + tag, ''), ('</' + tag + '>', '')
+
+            content = reduce(lambda a, kv: a.replace(*kv), replacer, content)
+
+        return content
+
     def auth(self):
         """Authentication method. The user is authenticated on every request, extraction the info from the supplied "access" cookie."""
         try:
@@ -345,7 +363,7 @@ class UdPyBlogHandler(webapp2.RequestHandler):
         self.no_cache()
         bucket = app_identity.get_default_gcs_bucket_name()
         return blobstore.create_upload_url(
-            '/image/upload',
+            '{}image/upload'.format(UdPyBlog.get_config("blog_prefix")),
             gs_bucket_name=bucket
         )
 
@@ -391,6 +409,7 @@ class UdPyBlogHandler(webapp2.RequestHandler):
             images_dropped = list(set(images_check) - set(images))
 
             logging.info("[process_images] Purging {} unmapped images. ({}...)".format(len(images_dropped),images_dropped[0:3]))
+
         else:
             if self.user:
                 images_stored = UdPyBlogImage.all().filter('user =', self.user.key()).filter('post =', None)
@@ -404,7 +423,6 @@ class UdPyBlogHandler(webapp2.RequestHandler):
                 images_dropped = []
                 for image in images_stored:
                     images_dropped.append(str(image.blob_key.key()))
-
 
         for image in images_dropped:
             for image_placed in UdPyBlogImage.all().filter('blob_key = ', image):
@@ -801,8 +819,8 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                 post = UdPyBlogPost(
                     subject = self.args["subject"],
                     summary = self.args["summary"],
+                    content = "Your post content could not be processed. Please contact the administrator.",
                     cover_image = cover_image_key,
-                    content = UdPyBlog.sanitize_post(self.args["content"]),
                     user = self.user
                 )
 
@@ -812,9 +830,9 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                     self.redirect_prefixed("post/{0}".format(self.args["post_id"]))
                     return
 
-                post.content = self.args["content"]
-                post.summary = self.args["summary"]
                 post.subject = self.args["subject"]
+                post.summary = self.args["summary"]
+                post.content = "Your post content could not be processed. Please contact the administrator."
                 if self.args["cover_image"]:
                     post.cover_image = self.args["cover_image"]
 
@@ -824,6 +842,7 @@ class UdPyBlogPostHandler(UdPyBlogSignupHandler):
                     post.cover_image.delete()
                     post.cover_image = None
 
+            post.content = self.sanitize_post(self.args["content"])
             post.put()
             if self.args["cover_image"]:
                 self.args["cover_image"].post = post.key()
@@ -1185,7 +1204,6 @@ class UdPyBlogPostCleanUpHandler(UdPyBlogTaskHandler):
             except:
                 logging.info(sys.exc_info())
 
-            self.set_status(200)
             return
 
         self.error(403)
@@ -1420,25 +1438,6 @@ class UdPyBlog():
             ):
                 return "Input contains illegal characters"
         return True
-
-    @classmethod
-    def sanitize_post(cls, content):
-        """Fix all blob references to actual image viewing urls. Replace/filter forbidden tags."""
-        quoteds = re.findall(r'["\'][^"\']+["\']',content)
-        for quoted in quoteds:
-            match = re.search(r'encoded_gs_file:[^"\']+(["\'])$',quoted)
-            if match:
-                content = content.replace(quoted, match.group(1) + self.url_prefixed("image/view") + match.group(0))
-
-        for (tag, replacement) in cls.__config["forbidden_tags"]:
-            if replacement:
-                replacer = ('<' + tag, '<' + replacement), ('</' + tag + '>', '</' + replacement + '>')
-            else:
-                replacer = ('<' + tag, ''), ('</' + tag + '>', '')
-
-            content = reduce(lambda a, kv: a.replace(*kv), replacer, content)
-
-        return content
 
     @classmethod
     def error_handler(cls, request, response, exception):

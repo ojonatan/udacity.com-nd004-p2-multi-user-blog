@@ -53,12 +53,6 @@ function initBlogForm(){
 				dataType: "json"
 			}).responseText
 		);
-		var timestamp = Math.round(+new Date()/1000);
-		json.upload_url += json.upload_url.indexOf('?') > -1 ?
-			'&gae_upload_url_timestamp=' + timestamp
-			:
-			'?gae_upload_url_timestamp=' + timestamp
-
 		return json.upload_url;
 	}
 
