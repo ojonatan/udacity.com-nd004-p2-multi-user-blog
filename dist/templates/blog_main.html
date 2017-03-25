@@ -19,7 +19,8 @@
 
 	{% endif %}
 		<div class="row">
-	{% for post in posts %}
+	{% if posts %}
+		{% for post in posts %}
 			<article class="post col-xs-12 col-sm-6">
 				<div class="well">
 					<span class="post-date">{{ post.get_fancy_date() }}</span>
@@ -30,33 +31,33 @@
 								<div class="post-cover-image-wrapper">
 									<div
 										class="post-cover-image"
-		{% if post.cover_image %}
+			{% if post.cover_image %}
 										style="background-image: url({{ config.image_url_prefixed }}{{ post.cover_image.blob_key.key() }})"
-		{% endif %}
+			{% endif %}
 								>
 									</div>
 								</div>
 							</a>
 							<form action="{{ config.blog_prefix }}post/{{ post.key().id() }}/like" method="post" data-blog-form="post-post-like">
-		{% if user.legit and user.liked_posts.filter('post = ',post.key()).count() == 1 %}
+			{% if user.legit and user.liked_posts.filter('post = ',post.key()).count() == 1 %}
 								<button
 									type="submit"
 									class="post-un-like-button button-icon button-icon button-icon-un-like"
 									data-blog-control="post-unlike"
-			{% if user.legit and post.user.key() == user.key() %}
+				{% if user.legit and post.user.key() == user.key() %}
 									disabled="disabled"
-			{% endif %}
+				{% endif %}
 								>{{ post.get_likes_count() }}</button>
-		{% else %}
+			{% else %}
 								<button
 									type="submit"
 									class="post-like-button button-icon button-icon-like"
 									data-blog-control="post-like"
-			{% if user.legit and post.user.key() == user.key() %}
+				{% if user.legit and post.user.key() == user.key() %}
 									disabled="disabled"
-			{% endif %}
+				{% endif %}
 								>{{ post.get_likes_count() }}</button>
-		{% endif %}
+			{% endif %}
 							</form>
 							<a href="{{ config.blog_prefix }}post/{{ post.key().id() }}#comments" class="post-button-wrapper" data-blog-control="get-post-comment">
 								<button type="button" class="post-comments button-icon button-icon-comments">{{ post.get_comments_count() }} Comments</button>
@@ -67,7 +68,22 @@
 					</div>
 				</div>
 			</article>
-	{% endfor %}
+		{% endfor %}
+	{% else %}
+
+			<div class="col-xs-12">
+				<h1><i class="icon-position-before icon-magic"></i>A fresh start</h1>
+
+				<p>There are absolutely no blog posts to display. Why not be the first one to <a href="{{ config.blog_prefix }}newpost" data-blog-control="get-post-create">create one!</a></p>
+
+				<p>This blog is a blog about this blog. Don't worry if you're unsure what to contribute. As long as it is not obscene or offensive in any way no one would object.</p>
+
+				<p>Besides - other then posting or signing up - what is there for you to do?</p>
+
+				<p>Still not conviced? Well, I've dedicated far too much time to write this "empty blog notice" for it to go unnoticed because people rush to make use of this blog.</p>
+
+			</div>
+	{% endif %}
 		</div>
 
 	{% if page_prev or page_next %}
