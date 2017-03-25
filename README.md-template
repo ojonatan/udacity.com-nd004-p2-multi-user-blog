@@ -20,6 +20,16 @@ The blog features rich media content powered by jQuery Plugins. Hooks on log in/
 
 https://udacity-160512.appspot.com/blog/
 
+## Deployment
+
+This is designed to run in the Google Appengine Cloud.
+
+```
+gcloud app deploy
+gcloud app deploy cron.yaml
+
+```
+
 ## Installation (development only)
 
 This is only required if you want to work with the sources. Grunt is used to do CSS processing and

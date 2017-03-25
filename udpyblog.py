@@ -47,7 +47,6 @@ class UdPyBlogEntity(db.Model):
             }
         )
 
-
 class UdPyBlogUser(UdPyBlogEntity):
     """User entities. Created thru signup"""
     legit = True
@@ -203,6 +202,7 @@ class UdPyBlogHandler(webapp2.RequestHandler):
 
     def render_str(self, template_file, **params):
         params = params or {}
+        params["stats"] = self.render_stats()
         params["login_page"] = self.login
         params["signup_page"] = self.signup
         params["config"] = UdPyBlog.dump_config()
@@ -212,6 +212,17 @@ class UdPyBlogHandler(webapp2.RequestHandler):
             params["user"] = self.user
 
         return UdPyBlog.render_template(template_file, **params)
+
+    def render_stats(self):
+        return {
+            "users_count": UdPyBlogUser.all().count(),
+            "posts_count": UdPyBlogPost.all().count(),
+            "comments_count": UdPyBlogPostComment.all().count(),
+            "likes_count": UdPyBlogPostLikes.all().count(),
+            "images_count": UdPyBlogImage.all().count(),
+            "blobstore_count": blobstore.BlobInfo.all().count()
+        }
+
 
     def render(self, template_file, **kw):
         self.write(self.render_str(template_file, **kw))

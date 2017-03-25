@@ -125,6 +125,33 @@ h6 {
 	clear: both;
 }
 
+.stats {
+	color: #aaa;
+	font-size: 10px;
+	display: flex;
+	width: 10%;
+	flex-flow: row wrap;
+}
+
+.footer-copyright {
+	display: flex;
+	
+}
+
+.footer-copyright p {
+	width: 80%;
+}
+
+.stats-label {
+	text-align: right;
+	width: 80%;
+	padding-right: 10px;
+}
+
+.stats-value {
+	width: 10%;
+}
+
 .post
 {
 	-ms-word-break: break-all;
@@ -133,7 +160,11 @@ h6 {
 }
 
 @media screen and (max-width: @screen-xs-max) {
-	.post-cover-image {
+	.stats {
+		width: 25%;
+	}
+	.footer-copyright p {
+		width: 50%;
 	}
 }
 
@@ -305,7 +336,7 @@ h6 {
     background-color: #333333;
     padding-top: 3px;
     padding-bottom: 3px;
-    text-align: center;
+    text-align: left;
 }
 
 #footer .row {
@@ -319,7 +350,7 @@ h6 {
 
 #footer .footer-copyright p {
     margin: 10px;
-    color: #ccc;
+    color: #bbb;
 }
 
 #footer ul {
