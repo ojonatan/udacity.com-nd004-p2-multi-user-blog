@@ -41,7 +41,7 @@ From the [```he3-appengine-lib```](https://code.google.com/archive/p/he3-appengi
 --------------------------------------------------------------------------------
 The create blog post form is there and ready for input                2/ 0/ 0/ 2
 --------------------------------------------------------------------------------
- .. Login with <<t_1490393838rEkZ>> works                             1/ 0/ 0/ 1
+ .. Login with <<t_1490446897109K>> works                             1/ 0/ 0/ 1
     > [in]  data-blog-control="get-logout"                            OK
 
  .. Post create form is accessible and is fully featured              6/ 0/ 0/ 6
@@ -63,7 +63,7 @@ captive login form
  .. Enforcing login                                                   1/ 0/ 0/ 1
     > [in] data-blog-form="post-login"                                OK
 
- .. Login with <<t_1490393839_B6jy>> works                            1/ 0/ 0/ 1
+ .. Login with <<t_1490446898_bc1F>> works                            1/ 0/ 0/ 1
     > [in]  data-blog-form="post-post-create"                         OK
 
 --------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ captive login form
 --------------------------------------------------------------------------------
 Log in with existing user works                                       1/ 0/ 0/ 1
 --------------------------------------------------------------------------------
- .. Login with <<t_1490393837>> works                                 1/ 0/ 0/ 1
+ .. Login with <<t_1490446897>> works                                 1/ 0/ 0/ 1
     > [in]  data-blog-control="get-logout"                            OK
 
 --------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ Log in with existing user works                                       1/ 0/ 0/ 1
 Create a poisoned but formal correct new blog post and                2/ 0/ 0/ 2
 verify sanitization
 --------------------------------------------------------------------------------
- .. Login with <<t_1490393838rEkZ>> works                             1/ 0/ 0/ 1
+ .. Login with <<t_1490446897109K>> works                             1/ 0/ 0/ 1
     > [in]  data-blog-control="get-logout"                            OK
 
  .. Blog post creation: Paste a perfectly ok blog post, but           6/ 0/ 0/ 6
@@ -106,7 +106,7 @@ verify sanitization
 --------------------------------------------------------------------------------
 Log out right after login works                                       2/ 0/ 0/ 2
 --------------------------------------------------------------------------------
- .. Login with <<t_1490393837>> works                                 1/ 0/ 0/ 1
+ .. Login with <<t_1490446897>> works                                 1/ 0/ 0/ 1
     > [in]  data-blog-control="get-logout"                            OK
 
  .. Testing, if the initial view features the logged out              2/ 0/ 0/ 2
@@ -158,7 +158,7 @@ Post too short input for a blog post and see 3 errors                 2/ 0/ 0/ 2
     > [in]  data-blog-control="post-post-create"                      OK
     > [in]  data-blog-control="get-home"                              OK
 
- .. Login with <<t_1490393838rEkZ>> works                             1/ 0/ 0/ 1
+ .. Login with <<t_1490446897109K>> works                             1/ 0/ 0/ 1
     > [in]  data-blog-control="get-logout"                            OK
 
 --------------------------------------------------------------------------------
@@ -242,22 +242,22 @@ Submitting signups with bad data                                      5/ 0/ 0/ 5
 --------------------------------------------------------------------------------
 Update blog post and verify changes                                   5/ 0/ 0/ 5
 --------------------------------------------------------------------------------
- .. Login with <<t_1490393839_B6jy>> works                            1/ 0/ 0/ 1
+ .. Login with <<t_1490446898_bc1F>> works                            1/ 0/ 0/ 1
     > [in]  data-blog-control="get-logout"                            OK
 
  .. View details of just created blog post with subject <<>>          5/ 0/ 0/ 5
     > [in]  data-blog-control="get-post-update"                       OK
     > [re]  data-blog-content-                                        OK
     > element="subject"[^>]*>\s*TestSubjectUPDATE: TestPost:
-    > Z8yUbYoBZRFj0pebRmdr\s*<
+    > ymgPjI5Q37kKyNEMlUjI\s*<
     > [re]  data-blog-content-                                        OK
     > element="summary"[^>]*>\s*TestSummaryUPDATE:
     > TestSummary:
-    > dLKFvx4wTtQ1ILpYlf70lMj3DZfJwyWdrlDA6CybFeYHzKd6IL\s*<
+    > 43BGSLCzWTBX5ddXvtHE9e7ge7R2jexGf3GgdDA2EV9vQFBCiG\s*<
     > [re]  data-blog-content-                                        OK
     > element="content"[^>]*>\s*TestContentUPDATE:
     > TestContent:
-    > 7ndRVLrbYyoIEIksHr9WhNxTEktbvWj9EH3SDRfyiThqo9nB9l\s*<
+    > cQmv8pf7t9TAFyNdmj2VsGDidM3WvKQSYc6gNpuoEbKXm5PHWH\s*<
     > [in]  data-blog-control="get-logout"                            OK
 
  .. Blog post creation: Paste a perfectly ok blog post, but           6/ 0/ 0/ 6
@@ -274,33 +274,33 @@ Update blog post and verify changes                                   5/ 0/ 0/ 5
 
  .. View details of just created blog post with subject <<>>          8/ 0/ 0/ 8
     > [re] <textarea(?!name="content").+name="content"[^>]*>          OK
-    > TestContent: 7ndRVLrbYyoIEIksHr9WhNxTEktbvWj9EH3SDRfyi
-    > Thqo9nB9l<\/textarea>
+    > TestContent: cQmv8pf7t9TAFyNdmj2VsGDidM3WvKQSYc6gNpuoE
+    > bKXm5PHWH<\/textarea>
     > [re] <textarea(?!name="summary").+name="summary"[^>]*>          OK
-    > TestSummary: dLKFvx4wTtQ1ILpYlf70lMj3DZfJwyWdrlDA6CybF
-    > eYHzKd6IL<\/textarea>
+    > TestSummary: 43BGSLCzWTBX5ddXvtHE9e7ge7R2jexGf3GgdDA2E
+    > V9vQFBCiG<\/textarea>
     > [re] <textarea(?!name="summary").+name="summary"[^>]*>          OK
     > ((?!<\/textarea>).+)<\/textarea>
     > [re] <input(?!name="subject").+name="subject"(?!value=          OK
     > ").+value="([^"]+)"
     > [re] <input(?!name="subject").+name="subject"(?!value=          OK
-    > ").+value="TestPost: Z8yUbYoBZRFj0pebRmdr"
+    > ").+value="TestPost: ymgPjI5Q37kKyNEMlUjI"
     > [re] <textarea(?!name="content").+name="content"[^>]*>          OK
     > ((?!<\/textarea>).+)<\/textarea>
     > [in]  data-blog-form="post-post-update"                         OK
     > [in]  data-blog-control="get-logout"                            OK
 
  .. View details of just created blog post with subject               5/ 0/ 0/ 5
- .. <<TestPost: Z8yUbYoBZRFj0pebRmdr>>
+ .. <<TestPost: ymgPjI5Q37kKyNEMlUjI>>
     > [re]  data-blog-content-                                        OK
     > element="content"[^>]*>\s*TestContent:
-    > 7ndRVLrbYyoIEIksHr9WhNxTEktbvWj9EH3SDRfyiThqo9nB9l\s*<
+    > cQmv8pf7t9TAFyNdmj2VsGDidM3WvKQSYc6gNpuoEbKXm5PHWH\s*<
     > [re]  data-blog-content-                                        OK
     > element="summary"[^>]*>\s*TestSummary:
-    > dLKFvx4wTtQ1ILpYlf70lMj3DZfJwyWdrlDA6CybFeYHzKd6IL\s*<
+    > 43BGSLCzWTBX5ddXvtHE9e7ge7R2jexGf3GgdDA2EV9vQFBCiG\s*<
     > [re]  data-blog-content-                                        OK
     > element="subject"[^>]*>\s*TestPost:
-    > Z8yUbYoBZRFj0pebRmdr\s*<
+    > ymgPjI5Q37kKyNEMlUjI\s*<
     > [in]  data-blog-control="get-logout"                            OK
     > [in]  data-blog-control="get-post-create"                       OK
 
@@ -323,4 +323,4 @@ later use
 
 ## Version
 
-2017-03-24T23:17:20.439000
+2017-03-25T14:01:39.724000

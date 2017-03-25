@@ -2,59 +2,64 @@
 
 {% block content %}
 
-			<div class="post post-full" data-blog-panel="post">
-				<span class="post-date">{{ post.get_fancy_date() }}</span>
-				<div class="post-cover-summary">
-					<div class="post-cover-options">
-						<a href="{{ config.blog_prefix }}post/{{ post.key().id() }}">
-							<div class="post-cover-image-wrapper">
-								<div
-										class="post-cover-image"
+			<article class="row post post-full" data-blog-panel="post">
+				<div class="col-xs-12">
+					<span class="post-date">{{ post.get_fancy_date() }}</span>
+					<div class="post-cover-summary">
+						<div class="post-cover-options">
+							<a href="{{ config.blog_prefix }}post/{{ post.key().id() }}">
+								<div class="post-cover-image-wrapper">
+									<div
+											class="post-cover-image"
 	{% if post.cover_image %}
-										style="background-image: url({{ config.image_url_prefixed }}{{ post.cover_image.blob_key.key() }})"
+											style="background-image: url({{ config.image_url_prefixed }}{{ post.cover_image.blob_key.key() }})"
 	{% endif %}
-								>
+									>
+									</div>
 								</div>
-							</div>
-						</a>
+							</a>
 
-					</div><h2 class="post-subject" data-blog-content-element="subject">{{ post.subject }}</h2><br>
-					<span class="post-author" data-blog-content-element="author">by {{ post.user.username }}</span><br>
-					<span class="post-summary" data-blog-content-element="summary">{{ post.get_summary() }}</span>
+						</div><h3 class="post-subject" data-blog-content-element="subject">{{ post.subject }}</h3><br>
+						<span class="post-author" data-blog-content-element="author">by {{ post.user.username }}</span><br>
+						<span class="post-summary" data-blog-content-element="summary">{{ post.get_summary() }}</span>
 
-					<div class="post-actions">
-						<form action="{{ config.blog_prefix }}post/{{ post.key().id() }}/like" method="post" data-blog-form="post-post-like">
+						<div class="post-actions">
+							<form action="{{ config.blog_prefix }}post/{{ post.key().id() }}/like" method="post" data-blog-form="post-post-like">
 	{% if user.legit and user.liked_posts.filter('post = ',post.key()).count() == 1 %}
-							<button
-								type="submit"
-								class="post-un-like-button button-icon button-icon button-icon-un-like"
-								data-blog-control="post-unlike"
+								<button
+									type="submit"
+									class="post-un-like-button button-icon button-icon button-icon-un-like"
+									data-blog-control="post-unlike"
 		{% if user.legit and post.user.key() == user.key() %}
-								disabled="disabled"
+									disabled="disabled"
 		{% endif %}
-							>{{ post.get_likes_count() }}</button>
+								>{{ post.get_likes_count() }}</button>
 	{% else %}
-							<button
-								type="submit"
-								class="post-like-button button-icon button-icon-like"
-								data-blog-control="post-like"
+								<button
+									type="submit"
+									class="post-like-button button-icon button-icon-like"
+									data-blog-control="post-like"
 		{% if user.legit and post.user.key() == user.key() %}
-								disabled="disabled"
+									disabled="disabled"
 		{% endif %}
-							>{{ post.get_likes_count() }}</button>
+								>{{ post.get_likes_count() }}</button>
 	{% endif %}
-						</form>
-						<a href="#comments" class="post-button-wrapper" data-blog-control="get-post-comment">
-							<button type="button" class="post-comments button-icon button-icon-comments">{{ post.get_comments_count() }} Comments</button>
-						</a>
+							</form>
+							<a href="#comments" class="post-button-wrapper" data-blog-control="get-post-comment">
+								<button type="button" class="post-comments button-icon button-icon-comments">{{ post.get_comments_count() }} Comments</button>
+							</a>
+						</div>
 					</div>
+					<hr>
 				</div>
-
-				<hr />
+				<div class="col-xs-12">
 <!--post-start-->
-				<div class="well" data-blog-content-element="content">{{ post.content }}</div>
+					<div class="well" data-blog-content-element="content">{{ post.content }}</div>
 <!--post-end-->
+				</div>
+			</article>
 
+			<div class="row post post-full">
 			</div>
 
 	{% if user.legit and post.user.key() == user.key() %}
