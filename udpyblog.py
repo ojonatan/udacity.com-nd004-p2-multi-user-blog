@@ -30,6 +30,7 @@ from google.appengine.api import memcache
 
 class UdPyBlogEmptyModel():
     """Empty model allows for a quick instantiation of an entity to serve thru jinja2"""
+
     legit = False
     def __init__( self, properties ):
         for property in properties:
@@ -49,19 +50,53 @@ class UdPyBlogEntity( db.Model ):
         )
 
     @classmethod
+    def get_all( cls, deleted = False ):
+        return cls.all()
+
+    @classmethod
+    def get_from_id( cls, id, deleted = False ):
+        return cls.get_by_id( id )
+
+    @classmethod
     def empty( cls ):
         return UdPyBlogEmptyModel(
             {
             }
         )
 
+class UdPyBlogEntityDeletable( UdPyBlogEntity ):
+    """Base class for entities that allow for soft deletion."""
+
+    @classmethod
+    def get_all( cls, deleted = False ):
+        if deleted:
+            return cls.all()
+
+        return cls.all().filter(
+            "deleted =",
+            None
+        )
+
+    @classmethod
+    def get_from_id( cls, id, deleted = False ):
+        if deleted:
+            return cls.get_by_id( id )
+
+        entity = cls.get_by_id( id )
+        if not entity.deleted:
+            return entity
+
+        return None
+
 class UdPyBlogUser( UdPyBlogEntity ):
     """User entities. Created thru signup"""
+
     legit = True
     username = db.StringProperty( required = True )
     password = db.StringProperty( required = True )
     salt = db.StringProperty( required = True )
     created = db.DateTimeProperty( auto_now_add = True )
+    deleted = db.DateTimeProperty()
     lastlog = db.DateTimeProperty( auto_now_add = True )
 
     def get_fancy_date( self ):
@@ -77,16 +112,17 @@ class UdPyBlogUser( UdPyBlogEntity ):
             }
         )
 
-class UdPyBlogPost( UdPyBlogEntity ):
+class UdPyBlogPost( UdPyBlogEntityDeletable ):
     """Post entities."""
+
     legit = True
     subject = db.StringProperty( required = True )
     cover_image = db.ReferenceProperty( required = False )
     summary = db.StringProperty( required = True, multiline = True )
     content = db.TextProperty( required = True )
     created = db.DateTimeProperty( auto_now_add = True )
-    deleted = db.DateTimeProperty( 0 )
-    user = db.ReferenceProperty( UdPyBlogUser, collection_name="posts" )
+    deleted = db.DateTimeProperty()
+    user = db.ReferenceProperty( UdPyBlogUser, collection_name = "posts" )
 
     def get_fancy_date( self ):
         return self.created.strftime( UdPyBlog.get_config( "post_date_template" ) )
@@ -107,42 +143,46 @@ class UdPyBlogPost( UdPyBlogEntity ):
         """
 
         deleted = datetime.datetime.now()
-        likes = UdPyBlogPostLikes.all().filter(
-            "post =",
-            self.key()
-        )
-        for like in likes:
-            like.deleted = deleted
-            like.put()
 
-        images = UdPyBlogImage.all().filter(
+        for like in self.users_who_like:
+            if not like.deleted:
+                like.deleted = deleted
+                like.put()
+
+        images = UdPyBlogImage.get_all().filter(
             "post =",
             self.key()
         )
         for image in images:
-            image.deleted = deleted
-            image.put()
+            if not image.deleted:
+                image.deleted = deleted
+                image.put()
 
-        comments = UdPyBlogPostComment.all().filter(
-            "post =",
-            self.key()
-        )
-        for comment in comments:
-            comment.deleted = deleted
-            comment.put()
+        for comment in self.comments:
+            if not comment.deleted:
+                comment.deleted = deleted
+                comment.put()
 
         self.deleted = deleted
         self.put()
 
-class UdPyBlogPostComment( UdPyBlogEntity ):
+class UdPyBlogPostComment( UdPyBlogEntityDeletable ):
     """Comment entities."""
+
     legit = True
     subject = db.StringProperty( required = True )
     note = db.TextProperty( required = True )
+    user = db.ReferenceProperty(
+        UdPyBlogUser,
+        collection_name = "comments"
+    )
+    post = db.ReferenceProperty(
+        UdPyBlogPost,
+        collection_name = "comments"
+    )
     created = db.DateTimeProperty( auto_now_add = True )
-    deleted = db.DateTimeProperty( 0 )
-    user = db.ReferenceProperty( UdPyBlogUser, collection_name="users" )
-    post = db.ReferenceProperty( UdPyBlogPost, collection_name="comments" )
+    deleted = db.DateTimeProperty()
+
     @classmethod
     def empty( cls, **attributes ):
         defaults = {
@@ -162,37 +202,39 @@ class UdPyBlogPostComment( UdPyBlogEntity ):
     def get_comment( self ):
         return self.nl_to_br( self.note )
 
-class UdPyBlogPostLikes( db.Model ):
+class UdPyBlogPostLike( UdPyBlogEntityDeletable ):
     """Like Entities place collections in both posts and users. If a user removes a like, the entity gets removed."""
+
     legit = True
     post = db.ReferenceProperty(
         UdPyBlogPost,
-        required=True,
-        collection_name="users_who_like"
+        required = True,
+        collection_name = "users_who_like"
     )
     user = db.ReferenceProperty(
         UdPyBlogUser,
-        required=True,
-        collection_name="liked_posts"
+        required = True,
+        collection_name = "liked_posts"
     )
-    deleted = db.DateTimeProperty( 0 )
     created = db.DateTimeProperty( auto_now_add = True )
+    deleted = db.DateTimeProperty()
 
     def get_fancy_date( self ):
         return self.created.strftime( UdPyBlog.get_config( "post_date_template" ) )
 
-class UdPyBlogImage( db.Model ):
+class UdPyBlogImage( UdPyBlogEntityDeletable ):
     """Uploaded images are organized in this model."""
+
     legit = True
     session = db.StringProperty( required = True )
     user = db.ReferenceProperty(
         UdPyBlogUser,
-        required=True,
-        collection_name="blobs"
+        required = True,
+        collection_name = "images"
     )
     post = db.ReferenceProperty( required = False )
     blob_key = blobstore.BlobReferenceProperty()
-    deleted = db.DateTimeProperty( 0 )
+    deleted = db.DateTimeProperty()
     created = db.DateTimeProperty( auto_now_add = True )
 
     def get_fancy_date( self ):
@@ -201,6 +243,7 @@ class UdPyBlogImage( db.Model ):
 # Handlers
 class UdPyBlogHandler( webapp2.RequestHandler ):
     """Base handler. Supplying all the basic methods required by all subclasses. Especially authentication."""
+
     signup = False
     login = False
     restricted = False
@@ -210,6 +253,19 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
     salt_length = 13
     logout = False
     request_override = {}
+
+    def set_cookie(self, name, value = "", path = "/" ):
+        self.response.headers.add_header(
+            "Set-Cookie",
+            "{}={}; path={}".format(
+                name,
+                value,
+                path
+            )
+        )
+
+    def delete_cookie(self, name):
+        self.set_cookie(name)
 
     def get_request_var( self, var ):
         if self.request_override:
@@ -221,7 +277,7 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
     def dispatch( self ):
         self.request_override = {}
         # Get a session store for this request.
-        self.session_store = sessions.get_store( request=self.request )
+        self.session_store = sessions.get_store( request = self.request )
 
         try:
             # Dispatch the request.
@@ -234,7 +290,7 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
     @webapp2.cached_property
     def session( self ):
         # Returns a session using the default cookie key.
-        return self.session_store.get_session( backend="memcache" )
+        return self.session_store.get_session( backend = "memcache" )
 
     def write( self, *a, **kw ):
         self.response.out.write( *a, **kw )
@@ -242,10 +298,10 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
     def url_prefixed( self, fragment ):
         return self.request.scheme + "://" + self.request.host + UdPyBlog.get_config( "blog_prefix" ) + fragment
 
-    def redirect_prefixed( self, fragment, code=None ):
+    def redirect_prefixed( self, fragment, code = None ):
         self.redirect(
             UdPyBlog.get_config( "blog_prefix" ) + fragment,
-            code=code
+            code = code
         )
 
     def render_str( self, template_file, **params ):
@@ -284,7 +340,7 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
             )
         )
 
-    def add_redirection( self, redirect, append=False ):
+    def add_redirection( self, redirect, append = False ):
         if not redirect:
             return
 
@@ -306,7 +362,7 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
         self.session["redirect"] = redirects
         return
 
-    def get_redirection( self, rightaway=True ):
+    def get_redirection( self, rightaway = True ):
         if not "redirect" in self.session:
             return
 
@@ -382,7 +438,7 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
             access = self.request.cookies.get( "access" ).split( "|" )
             if len( access ) == 2:
                 logging.info( "[auth] Trying to login user from access cookie" )
-                user = UdPyBlogUser.get_by_id( int( access[1] ) )
+                user = UdPyBlogUser.get_from_id( int( access[1] ) )
                 if user and self.validate_user( user, access ):
                     self.user = user
                     self.session["user"] = self.user
@@ -415,7 +471,7 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
         self.redirect_prefixed( "login/auto" )
         return False
 
-    def make_hash( self, message, salt=None ):
+    def make_hash( self, message, salt = None ):
         salt = salt or self.make_salt()
         return "{}{}".format(
             hmac.new(
@@ -431,11 +487,20 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
     def validate_user( self, user, access ):
         hash = access[0][:( self.salt_length * -1 )]
         salt = access[0][( self.salt_length * -1 ):]
-        return access[0] == self.make_hash( user.username, salt )
+        return access[0] == self.make_hash(
+            user.username,
+            salt
+    )
 
     def no_cache( self ):
-        self.response.headers.add_header( "Cache-Control", "no-cache, no-store, must-revalidate, max-age=0" )
-        self.response.headers.add_header( "Expires","0" )
+        self.response.headers.add_header(
+            "Cache-Control",
+            "no-cache, no-store, must-revalidate, max-age=0"
+        )
+        self.response.headers.add_header(
+            "Expires",
+            "0"
+        )
 
     def get_image_upload_url( self ):
         """
@@ -447,10 +512,10 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
         bucket = app_identity.get_default_gcs_bucket_name()
         return blobstore.create_upload_url(
             "{}image/upload".format( UdPyBlog.get_config( "blog_prefix" ) ),
-            gs_bucket_name=bucket
+            gs_bucket_name = bucket
         )
 
-    def process_images( self, post=None, expiry=None ):
+    def process_images( self, post = None, expiry = None ):
         """
         This function deals with orphaned BLOBs in the system. It is called from
         different handlers to keep the database fro bein clotted with costly junk.
@@ -471,7 +536,7 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
 
         if post:
             logging.info( "[process_images] Checking for Post: {}".format( post.key() ) );
-            images_stored = UdPyBlogImage.all().filter( "user =", self.user.key() )
+            images_stored = self.user.images
             images_check = []
             for image in images_stored:
                 if post.cover_image and post.cover_image.blob_key.key() == image.blob_key.key():
@@ -506,10 +571,7 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
 
         else:
             if self.user:
-                images_stored = UdPyBlogImage.all().filter(
-                    "user =",
-                    self.user.key()
-                ).filter(
+                images_stored = self.user.images.filter(
                     "post =",
                     None
                 )
@@ -519,13 +581,21 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
 
             elif expiry:
                 logging.info( "[process_images] Purging expired images ( {} )".format( expiry ) );
-                images_stored = UdPyBlogImage.all().filter( "post =", None ).filter( "created <", expiry )
+                images_stored = UdPyBlogImage.get_all().filter(
+                    "post =", None
+                ).filter(
+                    "created <", expiry
+                )
+
                 images_dropped = []
                 for image in images_stored:
                     images_dropped.append( str( image.blob_key.key() ) )
 
         for image in images_dropped:
-            for image_placed in UdPyBlogImage.all().filter( "blob_key = ", image ):
+            for image_placed in UdPyBlogImage.get_all().filter(
+                "blob_key =",
+                image
+            ):
                 logging.info( "[process_images] Purging {}".format( image_placed.blob_key.key() ) )
                 blob_info = blobstore.BlobInfo.get( image_placed.blob_key.key() )
                 if blob_info:
@@ -537,7 +607,10 @@ class UdPyBlogHandler( webapp2.RequestHandler ):
             for blob_key in images:
                 try:
                     logging.info( "[process_images] Adding image " + blob_key )
-                    image_placed = UdPyBlogImage.all().filter( "blob_key = ", blob_key ).get()
+                    image_placed = UdPyBlogImage.get_all().filter(
+                        "blob_key =",
+                        blob_key
+                    ).get()
                     image_placed.post = post.key()
                     image_placed.put()
                 except:
@@ -563,9 +636,9 @@ class UdPyBlogImageUploadHandler( blobstore_handlers.BlobstoreUploadHandler, UdP
         try:
             upload = self.get_uploads()[0]
             uploaded_image = UdPyBlogImage(
-                session=self.request.cookies["session"],
-                user=self.user,
-                blob_key=upload.key()
+                session = self.request.cookies["session"],
+                user = self.user,
+                blob_key = upload.key()
             )
             uploaded_image.put()
             self.render_json(
@@ -601,14 +674,15 @@ class UdPyBlogPostViewHandler( UdPyBlogHandler ):
 
         if post_id.isdigit():
             try:
-                post = UdPyBlogPost.get_by_id( int( post_id ) )
-                if post.deleted:
+                logging.info(post_id)
+                post = UdPyBlogPost.get_from_id( int( post_id ) )
+                if not post:
                     self.abort(404)
                     return
 
                 likes_post = False
                 if self.user and self.user.liked_posts.filter(
-                    "post = ",
+                    "post =",
                     post.key()
                 ).count() == 1:
                     likes_post = True
@@ -656,13 +730,10 @@ class UdPyBlogSignupHandlerLogout( UdPyBlogHandler ):
 
         redirect = self.get_redirection( False )
         self.session.clear()
-        self.response.headers.add_header( "Set-Cookie", str( "%s=%s; path=/" % ( "session","" ) ) )
+        self.delete_cookie("session")
 
         if "access" in self.request.cookies:
-            self.response.headers.add_header(
-                "Set-Cookie",
-                str( "%s=%s; path=/" % ( "access","" ) )
-            )
+            self.delete_cookie("access")
 
         if self.user:
             self.user = None
@@ -683,13 +754,14 @@ class UdPyBlogPostLikeHandler( UdPyBlogHandler ):
         if self.session.get( "request_override" ).__class__.__name__ == "UnicodeMultiDict":
             self.request_override = self.session.get( "request_override" )
             self.session["request_override"] = None
-            self.post( post_id, thaw=True )
+            self.post( post_id, thaw = True )
             return
 
         self.error( 403 )
         return
 
-    def post( self, post_id, thaw=False ):
+    def post( self, post_id, thaw = False ):
+        logging.info("LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL")
         if not self.auth():
             return
 
@@ -700,7 +772,7 @@ class UdPyBlogPostLikeHandler( UdPyBlogHandler ):
             self.redirect_prefixed( "" )
             return
 
-        post = UdPyBlogPost.get_by_id( int( post_id ) )
+        post = UdPyBlogPost.get_from_id( int( post_id ) )
         if not post:
             logging.info( "Post <<{}>> doesn't exist".format( post_id ) )
             self.abort( 404 )
@@ -717,25 +789,20 @@ class UdPyBlogPostLikeHandler( UdPyBlogHandler ):
                 return
 
 
-        posts_user_likes = UdPyBlogPostLikes.all().filter(
-            "post =",
-            post.key()
-        ).filter(
+        post_user_likes = post.users_who_like.filter(
             "user =",
             self.user.key()
-        )
+        ).get()
 
-        logging.info( "post has likes: " + str( posts_user_likes.count() ) )
-        if posts_user_likes.count():
-            for post_user_likes in posts_user_likes:
-                logging.info( "UNLIKE {}".format( post_user_likes ) )
-                post_user_likes.delete()
+        logging.info( "post likes this post!" )
+        if post_user_likes:
+            post_user_likes.delete()
+
         else:
-            post_like = UdPyBlogPostLikes(
-                post=post,
-                user=self.user
+            post_like = UdPyBlogPostLike(
+                post = post,
+                user = self.user
             )
-            logging.info( "LIKE {}".format( post_like ) )
             post_like.put()
 
         if self.get_redirection():
@@ -745,17 +812,16 @@ class UdPyBlogPostLikeHandler( UdPyBlogHandler ):
         return
 
 class UdPyBlogMainHandler( UdPyBlogHandler ):
-    def get( self, page_id=None ):
-
+    def get( self, page_id = None ):
         if not self.auth():
             return
 
         posts = []
         posts_query = PagedQuery(
             UdPyBlogPost.all().filter(
-                "deleted =",
-                None
-            ).order( "-created" ),
+            "deleted =",
+            None
+        ).order( "-created" ),
             UdPyBlog.get_config( "posts_per_page" )
         )
         pages_total = posts_query.page_count()
@@ -766,11 +832,11 @@ class UdPyBlogMainHandler( UdPyBlogHandler ):
             page_id = int( page_id )
 
         posts = posts_query.fetch_page( page_id )
-        page_next=None
+        page_next = None
         if pages_total > page_id:
             page_next = ( page_id + 1 )
 
-        page_prev=None
+        page_prev = None
         if page_id > 1:
             page_prev = ( page_id - 1 )
 
@@ -851,11 +917,9 @@ class UdPyBlogSignupHandler( UdPyBlogHandler ):
             user.put()
 
             self.session["user"] = user
-
-            self.response.headers.add_header(
-                "Set-Cookie",
-                "{}={}|{}; path=/".format(
-                    "access",
+            self.set_cookie(
+                "access",
+                "{}|{}".format(
                     access_hash,
                     user.key().id()
                 )
@@ -884,22 +948,35 @@ class UdPyBlogSignupHandler( UdPyBlogHandler ):
 
         if field == "username":
             if not self.login:
-                if UdPyBlogUser.all().filter(
+                if UdPyBlogUser.get_all( True ).filter(
                     "username =",
                     self.get_request_var(
                         field
                     )
                 ).count() > 0:
                     self.errors += 1
-                    return ( self.get_request_var( field ),"That user already exists" )
+                    return (
+                        self.get_request_var( field ),
+                        "That user already exists"
+                    )
 
             return ( self.get_request_var( field ),"" )
 
         if field == "subject":
-            return ( cgi.escape( self.get_request_var( field ) ),"" )
+            return (
+                cgi.escape(
+                    self.get_request_var( field )
+                ),
+                ""
+            )
 
         if field == "summary":
-            return ( cgi.escape( self.get_request_var( field ) ),"" )
+            return (
+                cgi.escape(
+                    self.get_request_var( field )
+                ),
+                ""
+            )
 
         if field == "verify":
             input_verify = self.get_request_var( field )
@@ -928,11 +1005,15 @@ class UdPyBlogSignupHandler( UdPyBlogHandler ):
 
 class UdPyBlogPostHandler( UdPyBlogSignupHandler ):
     restricted = True
-    fields = [ "subject", "summary", "content" ]
+    fields = [
+        "subject",
+        "summary",
+        "content"
+    ]
     required = fields
     scope = "post"
 
-    def post( self, post_id=None ):
+    def post( self, post_id = None ):
         if not self.auth():
             return
 
@@ -950,7 +1031,7 @@ class UdPyBlogPostHandler( UdPyBlogSignupHandler ):
         self.args["cover_image_url"] = None
         if self.get_request_var( "cover_image_url" ):
             self.args["cover_image_url"] = self.get_request_var( "cover_image_url" )
-            self.args["cover_image"] = UdPyBlogImage.all().filter(
+            self.args["cover_image"] = UdPyBlogImage.get_all().filter(
                 "blob_key =",
                 os.path.basename(
                     self.get_request_var( "cover_image_url" )
@@ -980,7 +1061,7 @@ class UdPyBlogPostHandler( UdPyBlogSignupHandler ):
                 )
 
             else:
-                post = UdPyBlogPost.get_by_id( int( post_id ) )
+                post = UdPyBlogPost.get_from_id( int( post_id ) )
                 if not post or post.user.username != self.user.username:
                     self.redirect_prefixed( "post/{0}".format( self.args["post_id"] ) )
                     return
@@ -1004,7 +1085,7 @@ class UdPyBlogPostHandler( UdPyBlogSignupHandler ):
                 self.args["cover_image"].put()
 
             logging.info( "Processing contained and dropped images from the current post..." )
-            self.process_images( post=post )
+            self.process_images( post = post )
 
             blog_entity_context = {
                 "post_id": post.key().id(),
@@ -1041,7 +1122,7 @@ class UdPyBlogPostHandler( UdPyBlogSignupHandler ):
         )
 
 class UdPyBlogPostUpdateHandler( UdPyBlogPostHandler ):
-    update=True
+    update = True
     def get( self, post_id ):
         self.no_cache()
 
@@ -1049,7 +1130,7 @@ class UdPyBlogPostUpdateHandler( UdPyBlogPostHandler ):
             return
 
         if post_id.isdigit():
-            post = UdPyBlogPost.get_by_id( int( post_id ) )
+            post = UdPyBlogPost.get_from_id( int( post_id ) )
             if post:
                 if post.user.key() != self.user.key():
                     self.redirect_prefixed( "post/{}".format( post.key().id() ) )
@@ -1083,13 +1164,13 @@ class UdPyBlogPostUpdateHandler( UdPyBlogPostHandler ):
             self.redirect_prefixed( "" )
 
 class UdPyBlogPostDeleteHandler( UdPyBlogPostHandler ):
-    delete=True
+    delete = True
     def post( self, post_id ):
         if not self.auth():
             return
 
         if post_id.isdigit():
-            post = UdPyBlogPost.get_by_id( int( post_id ) )
+            post = UdPyBlogPost.get_from_id( int( post_id ) )
             if post:
                 if post.user.key() != self.user.key():
                     self.redirect_prefixed( "post/{}".format( post.key().id() ) )
@@ -1139,20 +1220,23 @@ class UdPyBlogPostCommentHandler( UdPyBlogPostHandler ):
         if self.session.get( "request_override" ).__class__.__name__ == "UnicodeMultiDict":
             self.request_override = self.session.get( "request_override" )
             self.session["request_override"] = None
-            self.post( post_id, thaw=True )
+            self.post(
+                post_id,
+                thaw = True
+            )
             return
 
         self.error( 403 )
         return
 
-    def post( self, post_id, thaw=False ):
+    def post( self, post_id, thaw = False ):
         if not self.auth():
             return
 
         if self.update:
             self.fields.append( "comment_id" )
 
-        post = UdPyBlogPost.get_by_id( int( post_id ) )
+        post = UdPyBlogPost.get_from_id( int( post_id ) )
         if not post:
             self.redirect_prefixed( "" )
 
@@ -1188,7 +1272,7 @@ class UdPyBlogPostCommentHandler( UdPyBlogPostHandler ):
                 )
 
             else:
-                comment = UdPyBlogPostComment.get_by_id( int( self.args["comment_id"] ) )
+                comment = UdPyBlogPostComment.get_from_id( int( self.args["comment_id"] ) )
                 if not post or post.user.username != self.user.username:
                     self.redirect_prefixed( "post/{0}".format( int( post_id ) ) )
                     return
@@ -1233,7 +1317,7 @@ class UdPyBlogPostCommentDeleteHandler( UdPyBlogPostCommentHandler ):
         if not self.auth():
             return
 
-        comment = UdPyBlogPostComment.get_by_id( int( comment_id ) )
+        comment = UdPyBlogPostComment.get_from_id( int( comment_id ) )
         if not comment or comment.user.key() != self.user.key():
             self.redirect_prefixed( "" )
             return
@@ -1256,7 +1340,7 @@ class UdPyBlogPostCommentEditHandler( UdPyBlogPostCommentHandler ):
         if not self.auth():
             return
 
-        comment = UdPyBlogPostComment.get_by_id( int( comment_id ) )
+        comment = UdPyBlogPostComment.get_from_id( int( comment_id ) )
         if not comment_id or comment.user.key() != self.user.key():
             self.redirect_prefixed( "" )
             return
@@ -1283,7 +1367,7 @@ class UdPyBlogPostCommentEditHandler( UdPyBlogPostCommentHandler ):
         if not self.auth():
             return
 
-        post = UdPyBlogPost.get_by_id( int( post_id ) )
+        post = UdPyBlogPost.get_from_id( int( post_id ) )
         if not post:
             self.redirect_prefixed( "" )
 
@@ -1314,7 +1398,7 @@ class UdPyBlogPostCommentEditHandler( UdPyBlogPostCommentHandler ):
                     user = self.user
                 )
             else:
-                comment = UdPyBlogPostComment.get_by_id( int( comment_id ) )
+                comment = UdPyBlogPostComment.get_from_id( int( comment_id ) )
                 if not comment or comment.user.username != self.user.username:
                     self.redirect_prefixed(
                         "post/{0}".format(
@@ -1398,11 +1482,11 @@ class UdPyBlogPostCleanUpHandler( UdPyBlogTaskHandler ):
             try:
                 logging.info( "Starting Clean Up" )
                 self.process_images(
-                    expiry=(
+                    expiry = (
                         datetime.datetime.today()
                         +
                         datetime.timedelta(
-                            seconds=(
+                            seconds = (
                                 UdPyBlog.get_config( "blob_expiry_seconds" ) * -1
                             )
                         )
@@ -1429,13 +1513,7 @@ class UdPyBlogSignupHandlerLogin( UdPyBlogSignupHandler ):
         if not self.auth():
             return
 
-        self.response.headers.add_header(
-            "Set-Cookie",
-            "{}={}; path=/".format(
-                "access",
-                ""
-            )
-        )
+        self.delete_cookie("access")
         self.render( "login.html" )
 
     def post( self ):
@@ -1461,7 +1539,7 @@ class UdPyBlogSignupHandlerLogin( UdPyBlogSignupHandler ):
             return
 
         else:
-            user = UdPyBlogUser.all().filter(
+            user = UdPyBlogUser.get_all().filter(
                 "username =",
                 self.args["username"]
             ).get()
@@ -1469,7 +1547,16 @@ class UdPyBlogSignupHandlerLogin( UdPyBlogSignupHandler ):
                 logging.info( "User match!!!" )
                 if self.make_hash( self.args["password"], user.salt ) == user.password:
                     logging.info( "Password match!!!" )
-                    self.response.headers.add_header( "Set-Cookie", str( "%s=%s|%s; path=/" % ( "access", self.make_hash( user.username, user.salt ), user.key().id() ) ) )
+                    self.set_cookie(
+                        "access",
+                        "{}|{}".format(
+                            self.make_hash(
+                                user.username,
+                                user.salt
+                            ),
+                            user.key().id()
+                        )
+                    )
                     blog_entity_context = {
                         "username": user.username
                     }
@@ -1666,11 +1753,11 @@ class UdPyBlog():
         response.out.write(
             cls.render_template(
                 "error_{}.html".format(code),
-                exception=exception,
-                response=response,
-                user=UdPyBlogUser.empty(),
-                config=cls.dump_config(),
-                stats=cls.render_stats()
+                exception = exception,
+                response = response,
+                user = UdPyBlogUser.empty(),
+                config = cls.dump_config(),
+                stats = cls.render_stats()
             )
         )
 
@@ -1697,7 +1784,7 @@ class UdPyBlog():
         return result
 
     @classmethod
-    def get_config( cls, key, secure=False ):
+    def get_config( cls, key, secure = False ):
         if not secure:
             if key in cls.__config:
                 return cls.__config[key]
@@ -1715,29 +1802,21 @@ class UdPyBlog():
 
     @classmethod
     def render_stats( cls ):
-        images_deleted_count = UdPyBlogImage.all().filter(
+        logging.info(UdPyBlogPost.get_all().get())
+        images_deleted_count = UdPyBlogImage.get_all( True ).filter(
             "deleted !=",
             None
         ).count()
         blobstore_count = blobstore.BlobInfo.all().count()
         return {
-            "users_count": UdPyBlogUser.all().count(),
-            "posts_count": UdPyBlogPost.all().filter(
-                "deleted =",
-                None
-            ).count(),
-            "comments_count": UdPyBlogPostComment.all().filter(
-                "deleted =",
-                None
-            ).count(),
-            "likes_count": UdPyBlogPostLikes.all().filter(
-                "deleted =",
-                None
-            ).count(),
-            "images_count": UdPyBlogImage.all().count(),
+            "users_count": UdPyBlogUser.get_all().count(),
+            "posts_count": UdPyBlogPost.get_all().count(),
+            "comments_count": UdPyBlogPostComment.get_all().count(),
+            "likes_count": UdPyBlogPostLike.get_all().count(),
+            "images_count": UdPyBlogImage.get_all().count(),
             "images_deleted_count": images_deleted_count,
-            "blobstore_count": blobstore_count,
-            "blobstore_deleted_count": (blobstore_count - images_deleted_count)
+            "blobstore_count": (blobstore_count - images_deleted_count),
+            "blobstore_deleted_count": images_deleted_count
 
         }
 
