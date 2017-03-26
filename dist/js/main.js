@@ -20,6 +20,13 @@ function equalize_height(c_ITEMS) {
 }
 
 $(document).ready(function(){
+	$('#post-delete').on(
+			'submit',
+			function(){
+				return confirm("Are you sure you wish to delete this post?");
+			}
+	);
+
 	if($('#post-form').length){
 		return initBlogForm();
 	}

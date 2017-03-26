@@ -25,6 +25,12 @@ indexes:
   - name: user
   - name: blob_key
 
+- kind: UdPyBlogPost
+  properties:
+  - name: deleted
+  - name: created
+    direction: desc
+
 - kind: UdPyBlogPostComment
   properties:
   - name: post

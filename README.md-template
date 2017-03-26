@@ -14,6 +14,7 @@ The blog features rich media content powered by jQuery Plugins. Hooks on log in/
 
 ## TODO
 
+* Delete blog posts marks them, their connected likes, their images, and their comments as deleted
 * EXTRA Maybe add some testing scenarios for redirects and comments
 
 ## Live URL

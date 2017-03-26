@@ -65,8 +65,13 @@
 	{% if user.legit and post.user.key() == user.key() %}
 
 			<div class="form-inline row">
-				<div class="form-group col-xs-12">
+				<div class="form-group col-xs-6">
 					<a href="{{ config.blog_prefix }}post/{{ post.key().id() }}/update" data-blog-control="get-post-update"><button type="button" class="btn btn-primary" data-blog-control="post-comment-update">Update</button></a>
+				</div>
+				<div class="form-group col-xs-6 text-align-right">
+					<form id="post-delete" action="{{ config.blog_prefix }}post/{{ post.key().id() }}/delete" method="post" data-blog-form="post-post-delete">
+						<button type="submit" class="btn btn-link" data-blog-control="post-comment-delete"><i class="icon-position-before icon-remove"></i>Delete</button>
+					</form>
 				</div>
 			</div>
 

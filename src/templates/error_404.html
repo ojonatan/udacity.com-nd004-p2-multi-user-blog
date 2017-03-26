@@ -1,0 +1,10 @@
+{% extends "error.html" %}
+
+{% block error %}
+
+		<h1 data-blog-error-code="404"><i class="icon-position-before icon-warning-sign"></i>Resource not found</h1>
+
+		<p>The requested isn't available - at least not anymore. Please start over at <a href="{{ config.blog_prefix }}" data-blog-control="get-home">the home</a> of the blog.</p>
+
+
+{% endblock %}

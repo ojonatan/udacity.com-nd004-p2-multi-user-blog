@@ -1,0 +1,10 @@
+{% extends "error.html" %}
+
+{% block error %}
+
+		<h1 data-blog-error-code="403"><i class="icon-position-before icon-warning-sign"></i>Access Denied/Forbidden</h1>
+
+		<p>The requested resource is not accessible with your privileges as a user accessing it. Please start over at <a href="{{ config.blog_prefix }}" data-blog-control="get-home">the home</a> of the blog.</p>
+
+
+{% endblock %}

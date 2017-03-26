@@ -34,6 +34,9 @@ config = {
         # Use this template to print the comment dates
         "comment_date_template": "%d, %b %Y, %I:%M %p",
 
+        # Post Delete method: soft*
+        "post_delete_method": "soft",
+
         # Password secret for hashing
         "password_secret": "jkoz98zOIH98zih)(&(/iugIUuzgJHgUZGUztIUT",
 

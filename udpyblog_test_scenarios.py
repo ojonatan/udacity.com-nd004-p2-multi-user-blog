@@ -274,7 +274,7 @@ scenarios = {
             'data': {},
             'assertions': {
                 'in': [
-                    ' data-blog-error'
+                    ' data-blog-error-code="403"'
                 ]
             },
             'overrides': {}
@@ -452,7 +452,7 @@ scenarios = {
             },
             'reset': True,
             'data': {
-                'username': 'testuser',
+                'username': 'testuserXxX',
                 'password': 'f',
                 'verify': 'f',
                 'email': 'o@ccccc.com',
@@ -481,7 +481,7 @@ scenarios = {
             },
             'reset': True,
             'data': {
-                'username': 'testuser',
+                'username': 'testuserSsS',
                 'password': 'f234refdf',
                 'verify': 'rrsdddrr',
                 'email': 'o@ccccc.com',
